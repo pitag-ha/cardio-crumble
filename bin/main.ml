@@ -6,9 +6,19 @@ let runtime_counter _domain_id _ts counter _value =
   match counter with
   | EV_C_MINOR_PROMOTED ->
       Midi.(write_output [ message_on ]);
-      Unix.sleep 1;
+      Unix.sleep 5;
       Midi.(write_output [ message_off ])
   | _ -> ()
+
+let handle_control_c () =
+  let handle =
+    Sys.Signal_handle
+      (fun _ ->
+        Midi.(
+          write_output [ turn_off_everything ];
+          exit 1))
+  in
+  Sys.(signal sigint handle)
 
 let tracing child_alive path_pid =
   let c = create_cursor path_pid in
@@ -19,6 +29,7 @@ let tracing child_alive path_pid =
   done
 
 let () =
+  let _ = handle_control_c () in
   (* Extract the user supplied program and arguments. *)
   let prog, args = Util.prog_args_from_sys_argv Sys.argv in
   let proc =
@@ -27,5 +38,4 @@ let () =
       Unix.stdin Util.dev_null_out Util.dev_null_out
   in
   Unix.sleepf 0.1;
-  tracing (Util.child_alive proc) (Some (".", proc));
-  Printf.printf "\n"
+  tracing (Util.child_alive proc) (Some (".", proc))

@@ -17,6 +17,9 @@ let message_on =
 let message_off =
   Event.create ~status:'\128' ~data1:'\060' ~data2:'\090' ~timestamp:0l
 
+let turn_off_everything =
+  Event.create ~status:'\176' ~data1:'\123' ~data2:'\000' ~timestamp:0l
+
 let handle_error = function
   | Ok _ -> print_endline "writing midi output should have worked"
   | Error _ -> print_endline "writing midi output has failed"
