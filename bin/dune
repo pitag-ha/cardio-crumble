@@ -1,0 +1,4 @@
+(executable
+ (public_name cardio_crumble)
+ (name main)
+ (libraries cardio_crumble runtime_events unix))
