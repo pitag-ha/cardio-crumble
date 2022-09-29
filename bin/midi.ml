@@ -11,17 +11,24 @@ let device =
   | Error _ -> failwith "Is the midi device connected?"
   | Ok device -> device
 
-let message_on =
-  Event.create ~status:'\144' ~data1:'\060' ~data2:'\090' ~timestamp:0l
+let message_on ~note ?(volume = '\090') () =
+  Event.create ~status:'\144' ~data1:note ~data2:volume ~timestamp:0l
 
-let message_off =
-  Event.create ~status:'\128' ~data1:'\060' ~data2:'\090' ~timestamp:0l
+let message_off ~note ?(volume = '\090') () =
+  Event.create ~status:'\128' ~data1:note ~data2:volume ~timestamp:0l
+
+let base_note = '\048'
+let first_overtone = '\060'
+let second_overtone = '\067'
+let third_overtone = '\072'
+let fourth_overtone = '\076'
 
 let turn_off_everything =
   Event.create ~status:'\176' ~data1:'\123' ~data2:'\000' ~timestamp:0l
 
 let handle_error = function
-  | Ok _ -> print_endline "writing midi output should have worked"
-  | Error _ -> print_endline "writing midi output has failed"
+  | Ok _ -> () (* print_endline "writing midi output should have worked" *)
+  | Error _ -> ()
+(* print_endline "writing midi output has failed" *)
 
 let write_output msg = Portmidi.write_output device msg |> handle_error
