@@ -5,8 +5,9 @@ open Runtime_events
 let runtime_counter _domain_id _ts counter _value =
   match counter with
   | EV_C_MINOR_PROMOTED ->
-      (* TODO: do something smart *)
-      print_endline "minor heap promotion"
+      Midi.(write_output [ message_on ]);
+      Unix.sleep 1;
+      Midi.(write_output [ message_off ])
   | _ -> ()
 
 let tracing child_alive path_pid =

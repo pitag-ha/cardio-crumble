@@ -1,5 +1,6 @@
 let () =
   while true do
-    Unix.sleep 10
+    let _ = String.make 16 'a' in
+    Gc.minor ()
   done;
   print_endline "Hello, World!"

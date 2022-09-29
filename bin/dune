@@ -1,4 +1,4 @@
 (executable
  (public_name cardio_crumble)
  (name main)
- (libraries runtime_events unix))
+ (libraries runtime_events unix portmidi))
