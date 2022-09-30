@@ -7,15 +7,15 @@ let () =
 
 (* TODO: don't hardcode device_id. get it from the portmidi [get_device] *)
 let device =
-  match Portmidi.open_output ~device_id:2 ~buffer_size:0l ~latency:0l with
+  match Portmidi.open_output ~device_id:2 ~buffer_size:0l ~latency:1l with
   | Error _ -> failwith "Is the midi device connected?"
   | Ok device -> device
 
-let message_on ~note ?(volume = '\090') () =
-  Event.create ~status:'\144' ~data1:note ~data2:volume ~timestamp:0l
+let message_on ~note ~timestamp ?(volume = '\090') () =
+  Event.create ~status:'\144' ~data1:note ~data2:volume ~timestamp
 
-let message_off ~note ?(volume = '\090') () =
-  Event.create ~status:'\128' ~data1:note ~data2:volume ~timestamp:0l
+let message_off ~note ~timestamp ?(volume = '\090') () =
+  Event.create ~status:'\128' ~data1:note ~data2:volume ~timestamp
 
 let base_note = '\048'
 let first_overtone = '\060'

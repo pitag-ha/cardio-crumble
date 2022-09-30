@@ -2,44 +2,79 @@ let () = print_endline "Hello, World!"
 
 open Runtime_events
 
-let runtime_counter _domain_id _ts counter _value =
+let starting_time = ref None
+
+let adjust_time ts =
+  (* The ints64 representing the duration of a runtime phase are in units of nanoseconds, whereas the ints32 representing the timestamps of midi notes are in units of miliseconds.
+     So this function indirectly  multiplies the timestamp by a a factor 1000 (intentionally). *)
+  let int64_to_32 i = Int32.of_int @@ Int64.to_int @@ i in
+  Option.map
+    (fun st ->
+      Int64.sub (Timestamp.to_int64 ts) (Timestamp.to_int64 st) |> int64_to_32)
+    !starting_time
+
+let runtime_counter _domain_id ts counter _value =
   match counter with
   | EV_C_MINOR_PROMOTED ->
-      Midi.(write_output [ message_on ~note:base_note () ]);
-      Unix.sleep 5;
-      Midi.(write_output [ message_off ~note:base_note () ])
+      starting_time := Some ts;
+      Midi.(write_output [ message_on ~note:base_note ~timestamp:0l () ])
+      (* Unix.sleep 5;
+         Midi.(write_output [ message_off ~note:base_note () ]) *)
   | _ -> ()
 
 let runtime_begin _domain_id ts = function
-  | EV_MAJOR ->
-      Midi.(
-        write_output [ message_on ~note:third_overtone (* ~volume:'\070' *) () ]);
-      Printf.printf "%f: start of EV_MAJOR. ts: %Ld\n" (Sys.time ())
-        (Timestamp.to_int64 ts)
-      (* outest *)
+  | EV_MAJOR -> (
+      match adjust_time ts with
+      | None -> ()
+      | Some ts ->
+          Midi.(
+            write_output
+              [
+                message_on ~note:third_overtone ~timestamp:ts
+                  (* ~volume:'\070' *) ();
+              ]);
+          Printf.printf "%f: start of EV_MAJOR. ts: %ld\n%!" (Sys.time ()) ts
+          (* outest *))
   | EV_MAJOR_SWEEP -> ()
   (*   print_endline "start of EV_MAJOR_SWEEP" inside EV_MAjOR *)
   | EV_MAJOR_MARK_ROOTS ->
       ()
       (*
       print_endline "start of EV_MAJOR_MARK_ROOTS" (* inside EV_MAJOR *)*)
-  | EV_MAJOR_MARK ->
-      Midi.(
-        write_output [ message_on ~note:fourth_overtone (*~volume:'\060'*) () ]);
-      Printf.printf "%f: start of EV_MAJOR_MARK. ts: %Ld\n" (Sys.time ())
-        (Timestamp.to_int64 ts)
-      (* inside EV_MAJOR *)
-  | EV_MINOR ->
-      Midi.(write_output [ message_on ~note:first_overtone () ]);
-      Printf.printf "%f: start of EV_MINOR. ts: %Ld\n" (Sys.time ())
-        (Timestamp.to_int64 ts)
-      (* outest *)
-  | EV_MINOR_LOCAL_ROOTS ->
-      Midi.(
-        write_output [ message_on ~note:second_overtone (*~volume:'\070'*) () ]);
-      Printf.printf "%f: start of EV_MINOR_LOCAL_ROOTS ts: %Ld\n" (Sys.time ())
-        (Timestamp.to_int64 ts)
-      (* inside EV_MINOR *)
+  | EV_MAJOR_MARK -> (
+      match adjust_time ts with
+      | None -> ()
+      | Some ts ->
+          Midi.(
+            write_output
+              [
+                message_on ~note:fourth_overtone ~timestamp:ts
+                  (*~volume:'\060'*) ();
+              ]);
+          Printf.printf "%f: start of EV_MAJOR_MARK. ts: %ld\n%!" (Sys.time ())
+            ts
+          (* inside EV_MAJOR *))
+  | EV_MINOR -> (
+      match adjust_time ts with
+      | None -> ()
+      | Some ts ->
+          Midi.(
+            write_output [ message_on ~note:first_overtone ~timestamp:ts () ]);
+          Printf.printf "%f: start of EV_MINOR. ts: %ld\n%!" (Sys.time ()) ts
+          (* outest *))
+  | EV_MINOR_LOCAL_ROOTS -> (
+      match adjust_time ts with
+      | None -> ()
+      | Some ts ->
+          Midi.(
+            write_output
+              [
+                message_on ~note:second_overtone ~timestamp:ts
+                  (*~volume:'\070'*) ();
+              ]);
+          Printf.printf "%f: start of EV_MINOR_LOCAL_ROOTS ts: %ld\n%!"
+            (Sys.time ()) ts
+          (* inside EV_MINOR *))
   | _ -> ()
 
 let runtime_end _domain_id _ts = function
@@ -89,7 +124,7 @@ let () =
       [| "OCAML_RUNTIME_EVENTS_START=1" |]
       Unix.stdin Unix.stdout Unix.stderr
   in
-  Unix.sleepf 1.;
+  Unix.sleepf 0.1;
   tracing (Util.child_alive proc) (Some (".", proc));
   print_endline "got to the end";
   let _ = Midi.(write_output [ turn_off_everything ]) in
