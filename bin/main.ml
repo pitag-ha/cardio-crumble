@@ -102,7 +102,9 @@ let handle_control_c () =
     Sys.Signal_handle
       (fun _ ->
         Midi.(
-          write_output [ turn_off_everything ];
+          let _ = Portmidi.close_output buffer_device in
+          Unix.sleepf 0.5;
+          turn_off_everything ();
           exit 1))
   in
   Sys.(signal sigint handle)
@@ -127,5 +129,10 @@ let () =
   Unix.sleepf 0.1;
   tracing (Util.child_alive proc) (Some (".", proc));
   print_endline "got to the end";
-  let _ = Midi.(write_output [ turn_off_everything ]) in
+  let _ =
+    Midi.(
+      let _ = Portmidi.close_output buffer_device in
+      Unix.sleepf 0.5;
+      turn_off_everything ())
+  in
   ()
