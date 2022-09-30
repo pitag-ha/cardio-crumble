@@ -1,5 +1,3 @@
-let () = print_endline "Hello, World!"
-
 open Runtime_events
 
 let starting_time = ref None
@@ -13,16 +11,16 @@ let adjust_time ts =
       Int64.sub (Timestamp.to_int64 ts) (Timestamp.to_int64 st) |> int64_to_32)
     !starting_time
 
-let runtime_counter _domain_id ts counter _value =
+let runtime_counter tones _domain_id ts counter _value =
   match counter with
   | EV_C_MINOR_PROMOTED ->
       starting_time := Some ts;
-      Midi.(write_output [ message_on ~note:base_note ~timestamp:0l () ])
+      Midi.(write_output [ message_on ~note:tones.base_note ~timestamp:0l () ])
       (* Unix.sleep 5;
          Midi.(write_output [ message_off ~note:base_note () ]) *)
   | _ -> ()
 
-let runtime_begin _domain_id ts = function
+let runtime_begin tones _domain_id ts = function
   | EV_MAJOR -> (
       match adjust_time ts with
       | None -> ()
@@ -30,7 +28,7 @@ let runtime_begin _domain_id ts = function
           Midi.(
             write_output
               [
-                message_on ~note:third_overtone ~timestamp:ts
+                message_on ~note:tones.third ~timestamp:ts
                   (* ~volume:'\070' *) ();
               ]);
           Printf.printf "%f: start of EV_MAJOR. ts: %ld\n%!" (Sys.time ()) ts
@@ -48,7 +46,7 @@ let runtime_begin _domain_id ts = function
           Midi.(
             write_output
               [
-                message_on ~note:fourth_overtone ~timestamp:ts
+                message_on ~note:tones.fourth ~timestamp:ts
                   (*~volume:'\060'*) ();
               ]);
           Printf.printf "%f: start of EV_MAJOR_MARK. ts: %ld\n%!" (Sys.time ())
@@ -59,7 +57,7 @@ let runtime_begin _domain_id ts = function
       | None -> ()
       | Some ts ->
           Midi.(
-            write_output [ message_on ~note:first_overtone ~timestamp:ts () ]);
+            write_output [ message_on ~note:tones.first ~timestamp:ts () ]);
           Printf.printf "%f: start of EV_MINOR. ts: %ld\n%!" (Sys.time ()) ts
           (* outest *))
   | EV_MINOR_LOCAL_ROOTS -> (
@@ -69,7 +67,7 @@ let runtime_begin _domain_id ts = function
           Midi.(
             write_output
               [
-                message_on ~note:second_overtone ~timestamp:ts
+                message_on ~note:tones.second ~timestamp:ts
                   (*~volume:'\070'*) ();
               ]);
           Printf.printf "%f: start of EV_MINOR_LOCAL_ROOTS ts: %ld\n%!"
@@ -109,8 +107,10 @@ let handle_control_c () =
   in
   Sys.(signal sigint handle)
 
-let tracing child_alive path_pid =
+let tracing child_alive path_pid tones =
   let c = create_cursor path_pid in
+  let runtime_begin = runtime_begin tones in
+  let runtime_counter = runtime_counter tones in
   let cbs = Callbacks.create ~runtime_begin ~runtime_end ~runtime_counter () in
   while child_alive () do
     ignore (read_poll c cbs None);
@@ -127,7 +127,7 @@ let () =
       Unix.stdin Unix.stdout Unix.stderr
   in
   Unix.sleepf 0.1;
-  tracing (Util.child_alive proc) (Some (".", proc));
+  tracing (Util.child_alive proc) (Some (".", proc)) (Midi.major 48);
   print_endline "got to the end";
   let _ =
     Midi.(

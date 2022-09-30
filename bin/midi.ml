@@ -19,19 +19,6 @@ let message_on ~note ~timestamp ?(volume = '\090') () =
 let message_off ~note ~timestamp ?(volume = '\090') () =
   Event.create ~status:'\128' ~data1:note ~data2:volume ~timestamp
 
-let base_note = '\048'
-let first_overtone = '\050'
-
-(* let first_overtone = '\060' *)
-let second_overtone = '\052'
-(* let second_overtone = '\067' *)
-
-let third_overtone = '\054'
-
-(* let third_overtone = '\072' *)
-let fourth_overtone = '\055'
-(* let fourth_overtone = '\076' *)
-
 let handle_error = function
   | Ok _ -> () (* print_endline "writing midi output should have worked" *)
   | Error _ -> ()
@@ -44,3 +31,28 @@ let turn_off_everything () =
   |> handle_error
 
 let write_output msg = Portmidi.write_output buffer_device msg |> handle_error
+
+
+type tone = {
+  base_note : char;
+  first : char;
+  second : char;
+  third : char;
+  fourth : char;
+}
+
+let major base_note = {
+  base_note = Char.chr base_note;
+  first = Char.chr @@ base_note + 2;
+  second = Char.chr @@ base_note + 4;
+  third = Char.chr @@ base_note + 5;
+  fourth = Char.chr @@ base_note + 7;
+}
+
+let overtones base_note = {
+  base_note = Char.chr base_note;
+  first = Char.chr @@ base_note + 12;
+  second = Char.chr @@ base_note + 19;
+  third = Char.chr @@ base_note + 31;
+  fourth = Char.chr @@ base_note + 35;
+}
