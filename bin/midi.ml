@@ -18,10 +18,17 @@ let message_off ~note ~timestamp ?(volume = '\090') () =
   Event.create ~status:'\128' ~data1:note ~data2:volume ~timestamp
 
 let base_note = '\048'
-let first_overtone = '\060'
-let second_overtone = '\067'
-let third_overtone = '\072'
-let fourth_overtone = '\076'
+let first_overtone = '\050'
+
+(* let first_overtone = '\060' *)
+let second_overtone = '\052'
+(* let second_overtone = '\067' *)
+
+let third_overtone = '\054'
+
+(* let third_overtone = '\072' *)
+let fourth_overtone = '\055'
+(* let fourth_overtone = '\076' *)
 
 let turn_off_everything =
   Event.create ~status:'\176' ~data1:'\123' ~data2:'\000' ~timestamp:0l
