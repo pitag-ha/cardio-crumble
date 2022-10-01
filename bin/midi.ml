@@ -56,3 +56,8 @@ let overtones base_note = {
   third = Char.chr @@ base_note + 31;
   fourth = Char.chr @@ base_note + 35;
 }
+
+let shutdown () =
+  let _ = Portmidi.close_output buffer_device in
+  Unix.sleepf 0.5;
+  turn_off_everything ()

@@ -98,12 +98,7 @@ let runtime_end _domain_id _ts = function
 let handle_control_c () =
   let handle =
     Sys.Signal_handle
-      (fun _ ->
-        Midi.(
-          let _ = Portmidi.close_output buffer_device in
-          Unix.sleepf 0.5;
-          turn_off_everything ();
-          exit 1))
+      (fun _ -> Midi.shutdown (); exit 1)
   in
   Sys.(signal sigint handle)
 
@@ -129,10 +124,4 @@ let () =
   Unix.sleepf 0.1;
   tracing (Util.child_alive proc) (Some (".", proc)) (Midi.major 48);
   print_endline "got to the end";
-  let _ =
-    Midi.(
-      let _ = Portmidi.close_output buffer_device in
-      Unix.sleepf 0.5;
-      turn_off_everything ())
-  in
-  ()
+  Midi.shutdown ()
