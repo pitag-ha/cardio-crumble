@@ -1,3 +1,6 @@
+(* this function is extrated from the Portmidi bindings by Michael Bacarella.
+   Licenced under LGPL-2.1-or-later with OCaml-LGPL-linking-exception
+   See https://github.com/mbacarella/portmidi *)
 open Cmdliner
 
 let list_devices () =
