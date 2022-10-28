@@ -8,7 +8,7 @@ open Cmdliner
 
 let cmds =
   [
-    (* List_devices.cmd *)
+    List_devices.cmd;
     Play.cmd;
   ]
 
