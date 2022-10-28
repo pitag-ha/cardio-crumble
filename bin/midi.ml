@@ -1,4 +1,17 @@
+open! Import
+open Result.Syntax
+
 module Event = Portmidi.Portmidi_event
+
+
+type device = {
+  device_id : int;
+  device : Portmidi.Output_stream.t;
+}
+
+let error_to_string msg =
+  Portmidi.Portmidi_error.sexp_of_t msg
+  |> Sexplib0.Sexp.to_string
 
 let () =
   match Portmidi.initialize () with
@@ -6,12 +19,10 @@ let () =
   | Error _e -> failwith "error initializing portmidi"
 
 (* TODO: don't hardcode device_id. get it from the portmidi [get_device] *)
-let create_device () =
-  match Portmidi.open_output ~device_id:2 ~buffer_size:0l ~latency:1l with
+let create_device device_id =
+  match Portmidi.open_output ~device_id ~buffer_size:0l ~latency:1l with
   | Error _ -> failwith "Is the midi device connected?"
-  | Ok device -> device
-
-let buffer_device = create_device ()
+  | Ok device -> { device; device_id; }
 
 let message_on ~note ~timestamp ?(volume = '\090') () =
   Event.create ~status:'\144' ~data1:note ~data2:volume ~timestamp
@@ -24,13 +35,14 @@ let handle_error = function
   | Error _ -> ()
 (* print_endline "writing midi output has failed" *)
 
-let turn_off_everything () =
-  let turn_off_device = create_device () in
-  Portmidi.write_output turn_off_device
+let turn_off_everything device_id =
+  let device = create_device device_id in
+  let* _ = Portmidi.write_output device.device
     [ Event.create ~status:'\176' ~data1:'\123' ~data2:'\000' ~timestamp:0l ]
-  |> handle_error
+  in
+  Portmidi.close_output device.device
 
-let write_output msg = Portmidi.write_output buffer_device msg |> handle_error
+let write_output { device; _ } msg = Portmidi.write_output device msg |> handle_error
 
 
 type tone = {
@@ -57,7 +69,7 @@ let overtones base_note = {
   fourth = Char.chr @@ base_note + 35;
 }
 
-let shutdown () =
-  let _ = Portmidi.close_output buffer_device in
+let shutdown { device; device_id; } =
+  let* _ = Portmidi.close_output device in
   Unix.sleepf 0.5;
-  turn_off_everything ()
+  turn_off_everything device_id

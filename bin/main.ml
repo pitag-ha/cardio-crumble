@@ -40,7 +40,7 @@ let main =
     (Cmd.info "cardio-crumble" ~version:"%%VERSION%%" ~doc ~sdocs ~man)
     cmds
 
-let main () = Stdlib.exit @@ Cmd.eval main
+let main () = Stdlib.exit @@ Cmd.eval' main
 let () = main ()
 
 (*---------------------------------------------------------------------------
