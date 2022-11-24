@@ -16,7 +16,9 @@ let runtime_counter device tones _domain_id ts counter _value =
   match counter with
   | EV_C_MINOR_PROMOTED ->
       starting_time := Some ts;
-      Midi.(write_output device [ message_on ~note:tones.base_note ~timestamp:0l () ])
+      Midi.(
+        write_output device
+          [ message_on ~note:tones.base_note ~timestamp:0l () ])
       (* Unix.sleep 5;
          Midi.(write_output [ message_off ~note:base_note () ]) *)
   | _ -> ()
@@ -57,7 +59,9 @@ let runtime_begin device tones _domain_id ts = function
       match adjust_time ts with
       | None -> ()
       | Some ts ->
-          Midi.(write_output device [ message_on ~note:tones.first ~timestamp:ts () ]);
+          Midi.(
+            write_output device
+              [ message_on ~note:tones.first ~timestamp:ts () ]);
           Printf.printf "%f: start of EV_MINOR. ts: %ld\n%!" (Sys.time ()) ts
           (* outest *))
   | EV_MINOR_LOCAL_ROOTS -> (
@@ -102,9 +106,9 @@ let handle_control_c device =
         match Midi.shutdown device with
         | Ok _ -> ()
         | Error msg ->
-          let s = Midi.error_to_string msg in
-          Printf.eprintf "(ctrl-c handler) Error during device shutdown: %s" s;
-          exit 1)
+            let s = Midi.error_to_string msg in
+            Printf.eprintf "(ctrl-c handler) Error during device shutdown: %s" s;
+            exit 1)
   in
   Sys.(signal sigint handle)
 
@@ -139,11 +143,14 @@ let play device_id argv =
   match Midi.shutdown device with
   | Ok () -> 0
   | Error msg ->
-    let s = Midi.error_to_string msg in
-    Printf.eprintf "Error during device shutdown: %s" s;
-    1
+      let s = Midi.error_to_string msg in
+      Printf.eprintf "Error during device shutdown: %s" s;
+      1
 
 let argv = Arg.(non_empty & pos_all string [] & info [] ~docv:"ARGV")
-let device_id = Arg.(value & opt int 0 & info ["d"; "device_id"] ~docv:"DEVICE_ID")
+
+let device_id =
+  Arg.(value & opt int 0 & info [ "d"; "device_id" ] ~docv:"DEVICE_ID")
+
 let play_t = Term.(const play $ device_id $ argv)
 let cmd = Cmd.v (Cmd.info "play") play_t

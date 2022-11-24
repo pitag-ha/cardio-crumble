@@ -6,11 +6,7 @@
 
 open Cmdliner
 
-let cmds =
-  [
-    List_devices.cmd;
-    Play.cmd;
-  ]
+let cmds = [ List_devices.cmd; Play.cmd ]
 
 (* Command line interface *)
 

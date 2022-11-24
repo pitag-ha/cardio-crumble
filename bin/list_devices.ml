@@ -11,10 +11,12 @@ let list_devices () =
     match Portmidi.get_device_info i with
     | None -> Printf.printf "device %d not found\n" i
     | Some di ->
-      Printf.printf "      name: %s\n" (Option.value ~default:"null" di.Portmidi.Device_info.name);
-      Printf.printf " interface: %s\n" (Option.value ~default:"null" di.Portmidi.Device_info.interface);
-      Printf.printf "     input: %B\n" di.Portmidi.Device_info.input;
-      Printf.printf "    output: %B\n" di.Portmidi.Device_info.output
+        Printf.printf "      name: %s\n"
+          (Option.value ~default:"null" di.Portmidi.Device_info.name);
+        Printf.printf " interface: %s\n"
+          (Option.value ~default:"null" di.Portmidi.Device_info.interface);
+        Printf.printf "     input: %B\n" di.Portmidi.Device_info.input;
+        Printf.printf "    output: %B\n" di.Portmidi.Device_info.output
   done;
   Portmidi.terminate ();
   0
