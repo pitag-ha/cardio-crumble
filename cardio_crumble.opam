@@ -12,6 +12,9 @@ bug-reports: "https://github.com/username/reponame/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.3"}
+  "sexplib0"
+  "portmidi"
+  "cmdliner"
   "odoc" {with-doc}
 ]
 build: [

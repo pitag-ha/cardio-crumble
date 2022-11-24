@@ -21,7 +21,8 @@ let () =
 (* TODO: don't hardcode device_id. get it from the portmidi [get_device] *)
 let create_device device_id =
   match Portmidi.open_output ~device_id ~buffer_size:0l ~latency:1l with
-  | Error _ -> failwith "Is the midi device connected?"
+  | Error _ -> Printf.eprintf  "Can't find midi device with id: %i\nIs it connected?\n" device_id; exit 1
+    (* let err = Printf.sprintf "Can't find midi device with id %i.Is it connected?" device_id in failwith err *)
   | Ok device -> { device; device_id; }
 
 let message_on ~note ~timestamp ?(volume = '\090') () =
