@@ -1,0 +1,73 @@
+open Runtime_events
+open Cmdliner
+
+let starting_time = ref None
+
+let adjust_time ts =
+  (* The ints64 representing the duration of a runtime phase are in units of nanoseconds, whereas the ints32 representing the timestamps of midi notes are in units of miliseconds.
+     So this function indirectly  multiplies the timestamp by a a factor 1000 (intentionally). *)
+  let int64_to_32 i = Int32.of_int @@ Int64.to_int @@ i in
+  Option.map
+    (fun st ->
+      Int64.sub (Timestamp.to_int64 ts) (Timestamp.to_int64 st) |> int64_to_32)
+    !starting_time
+
+let runtime_counter device tones _domain_id ts counter _value =
+  match counter with
+  | EV_C_MINOR_PROMOTED ->
+      starting_time := Some ts;
+      Midi.(
+        write_output device
+          [ message_on ~note:tones.base_note ~timestamp:0l () ])
+      (* Unix.sleep 5;
+         Midi.(write_output [ message_off ~note:base_note () ]) *)
+  | _ -> ()
+
+let runtime_begin device tones _domain_id ts event =
+  match Play.event_to_note tones event with
+  | None -> ()
+  | Some note -> (
+      match adjust_time ts with
+      | None -> ()
+      | Some ts ->
+          Midi.(
+            write_output device
+              [ message_on ~note ~timestamp:ts (* ~volume:'\070' *) () ]);
+          Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
+            (Runtime_events.runtime_phase_name event)
+            ts)
+
+let runtime_end _device _domain_id _ts = function
+  | EV_MAJOR ->
+      (* Midi.(write_output  [ message_off ~note:third_overtone ~volume:'\070' () ]); *)
+      Printf.printf "%f: end of EV_MAJOR\n" (Sys.time ())
+  | EV_MAJOR_SWEEP -> () (* Printf.printf "end of EV_MAJOR_SWEEP\n" *)
+  | EV_MAJOR_MARK_ROOTS -> ()
+  (* Printf.printf "end of EV_MAJOR_MARK_ROOTS\n" *)
+  | EV_MAJOR_MARK ->
+      (* Midi.(
+         write_output [ message_off ~note:fourth_overtone ~volume:'\060' () ]); *)
+      Printf.printf "%f: end of EV_MAJOR_MARK\n" (Sys.time ())
+  | EV_MINOR ->
+      (* Midi.(write_output [ message_off ~note:first_overtone () ]); *)
+      Printf.printf "%f: end of EV_MINOR\n" (Sys.time ())
+  | EV_MINOR_LOCAL_ROOTS ->
+      (* Midi.(
+         write_output [ message_off ~note:second_overtone ~volume:'\070' () ]); *)
+      Printf.printf "%f: end of EV_MINOR_LOCAL_ROOTS\n" (Sys.time ())
+  | _ -> ()
+
+let tracing device child_alive path_pid tones =
+  let c = create_cursor path_pid in
+  let runtime_begin = runtime_begin device tones in
+  let runtime_counter = runtime_counter device tones in
+  let runtime_end = runtime_end device in
+  let cbs = Callbacks.create ~runtime_begin ~runtime_end ~runtime_counter () in
+  while child_alive () do
+    ignore (read_poll c cbs None);
+    Unix.sleepf 0.1
+  done
+
+let simple_play = Play.play ~tracing
+let play_t = Term.(const simple_play $ Play.device_id $ Play.argv)
+let cmd = Cmd.v (Cmd.info "simple_engine") play_t
