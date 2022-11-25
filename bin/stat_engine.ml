@@ -30,57 +30,94 @@ let polling_main_func child_alive path_pid _ =
     Unix.sleepf 0.1
   done
 
-let rec sequencer_main_func num_beats tones device _ =
-  let dom_event =
-    Mutex.lock event_table_lock;
-    Mutex.lock quantifier_table_lock;
-    let current = (None, Float.neg_infinity) in
-    let dom, _ =
-      List.fold_left
-        (fun ((_, current_max) as curr) new_event ->
-          match
-            ( Hashtbl.find_opt event_table new_event,
-              Hashtbl.find_opt quantifier_table new_event )
-          with
-          | None, _ -> curr
-          | Some _, None -> failwith "quantifier table hasn't been updated"
-          | Some num_this_beat, Some all_so_far ->
-              let average = Float.of_int all_so_far /. Float.of_int num_beats in
-              let new_increment =
-                100. -. (100. /. average *. Float.of_int num_this_beat)
-              in
-              if new_increment >= current_max then
-                (Some new_event, new_increment)
-              else curr)
-        current Play.events
-    in
+let threshold = function
+  | 0 -> -20.
+  | 1 -> 0.
+  | 2 -> 10.
+  | 3 -> 20.
+  | 4 -> 40.
+  | 5 -> 50.
+  | _ ->
+      Format.printf
+        "muahahahahhaha (won't start enumerating at 1 again ;)) \n%!";
+      exit 1
 
-    Mutex.unlock event_table_lock;
-    Mutex.unlock quantifier_table_lock;
-    dom
+let get_increment num_beats event =
+  Mutex.lock event_table_lock;
+  Mutex.lock quantifier_table_lock;
+  let incr =
+    match
+      ( Hashtbl.find_opt event_table event,
+        Hashtbl.find_opt quantifier_table event )
+    with
+    | None, _ -> Float.neg_infinity
+    | Some _, None -> failwith "quantifier table hasn't been updated"
+    | Some num_this_beat, Some all_so_far ->
+        let average = Float.of_int all_so_far /. Float.of_int num_beats in
+        100. -. (100. /. average *. Float.of_int num_this_beat)
   in
-  let () =
-    match dom_event with
-    | Some dom_event ->
-        Format.printf "dominant event: %s\n%!"
-          (Runtime_events.runtime_phase_name dom_event);
-        let note = Play.event_to_note tones dom_event in
-        Midi.(
-          write_output device
-            [ message_on ~note ~timestamp:0l (* ~volume:'\070' *) () ])
-    | None -> Format.printf "no dominant event!! :cool_cry:\n %!"
+  Mutex.unlock event_table_lock;
+  Mutex.unlock quantifier_table_lock;
+  incr
+
+let rec sequencer_main_func num_beats tones device bpm _ =
+  let interesting_stuff =
+    let compare e1 e2 =
+      Int.neg (Event.compare ~f:(get_increment num_beats) e1 e2)
+    in
+    let sorted_events = List.sort compare Event.all in
+    List.iter
+      (fun e ->
+        Format.printf "%s: %f\n%!"
+          (Runtime_events.runtime_phase_name e)
+          (get_increment num_beats e))
+      sorted_events;
+    print_endline "-------------------";
+
+    let rec loop acc = function
+      | hd :: tl ->
+          let i = List.length acc in
+          if i = 6 then acc
+          else
+            let new_acc =
+              if get_increment num_beats hd > threshold i then Some hd :: acc
+              else None :: acc
+            in
+            loop new_acc tl
+      | [] -> acc
+    in
+    loop [] sorted_events
   in
+  let n =
+    List.fold_left
+      (fun acc -> function Some _ -> acc + 1 | None -> acc)
+      0 interesting_stuff
+  in
+  List.iter
+    (function
+      | None -> ()
+      | Some event ->
+          let note = Play.event_to_note tones event in
+          Midi.(
+            write_output device
+              [ message_on ~note ~timestamp:0l (* ~volume:'\070' *) () ]);
+          (*FIXME: don't sleep, but use a timestamp*)
+          Unix.sleepf (60. /. Float.of_int bpm /. Float.of_int n))
+    interesting_stuff;
   Mutex.lock event_table_lock;
   Hashtbl.clear event_table;
   Mutex.unlock event_table_lock;
-  Unix.sleepf 0.3;
-  sequencer_main_func (num_beats + 1) tones device ()
+  (* Unix.sleepf (60. /. Float.of_int bpm); *)
+  sequencer_main_func (num_beats + 1) tones device bpm ()
 
-let tracing device child_alive path_pid tones =
+let tracing (bpm : int) device child_alive path_pid tones =
   let polling_domain = Domain.spawn (polling_main_func child_alive path_pid) in
-  let sequencer_domain = Domain.spawn (sequencer_main_func 1 tones device) in
+  let sequencer_domain =
+    Domain.spawn (sequencer_main_func 1 tones device bpm)
+  in
   List.iter Domain.join [ polling_domain; sequencer_domain ]
 
-let stat_play = Play.play ~tracing
-let play_t = Term.(const stat_play $ Play.device_id $ Play.argv)
+let bpm = Arg.(value & opt int 120 & info [ "bpm"; "--bpm" ] ~docv:"BPM")
+let stat_play bpm = Play.play ~tracing:(tracing bpm)
+let play_t = Term.(const stat_play $ bpm $ Play.device_id $ Play.argv)
 let cmd = Cmd.v (Cmd.info "stat_engine") play_t

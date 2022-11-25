@@ -1,0 +1,56 @@
+open Runtime_events
+
+type t = Runtime_events.runtime_phase
+
+let compare ~f e1 e2 = if e1 = e2 then 0 else if f e1 > f e2 then 1 else -1
+
+let all =
+  [
+    EV_EXPLICIT_GC_SET;
+    EV_EXPLICIT_GC_STAT;
+    EV_EXPLICIT_GC_MINOR;
+    EV_EXPLICIT_GC_MAJOR;
+    EV_EXPLICIT_GC_FULL_MAJOR;
+    EV_EXPLICIT_GC_COMPACT;
+    EV_MAJOR;
+    EV_MAJOR_SWEEP;
+    EV_MAJOR_MARK_ROOTS;
+    EV_MAJOR_MARK;
+    EV_MINOR;
+    EV_MINOR_LOCAL_ROOTS;
+    EV_MINOR_FINALIZED;
+    EV_EXPLICIT_GC_MAJOR_SLICE;
+    EV_FINALISE_UPDATE_FIRST;
+    EV_FINALISE_UPDATE_LAST;
+    EV_INTERRUPT_REMOTE;
+    EV_MAJOR_EPHE_MARK;
+    EV_MAJOR_EPHE_SWEEP;
+    EV_MAJOR_FINISH_MARKING;
+    EV_MAJOR_GC_CYCLE_DOMAINS;
+    EV_MAJOR_GC_PHASE_CHANGE;
+    EV_MAJOR_GC_STW;
+    EV_MAJOR_MARK_OPPORTUNISTIC;
+    EV_MAJOR_SLICE;
+    EV_MAJOR_FINISH_CYCLE;
+    EV_MINOR_CLEAR;
+    EV_MINOR_FINALIZERS_OLDIFY;
+    EV_MINOR_GLOBAL_ROOTS;
+    EV_MINOR_LEAVE_BARRIER;
+    EV_STW_API_BARRIER;
+    EV_STW_HANDLER;
+    EV_STW_LEADER;
+    EV_MAJOR_FINISH_SWEEPING;
+    EV_MINOR_FINALIZERS_ADMIN;
+    EV_MINOR_REMEMBERED_SET;
+    EV_MINOR_REMEMBERED_SET_PROMOTE;
+    EV_MINOR_LOCAL_ROOTS_PROMOTE;
+    EV_DOMAIN_CONDITION_WAIT;
+    EV_DOMAIN_RESIZE_HEAP_RESERVATION;
+  ]
+
+let event_to_int event =
+  let rec loop i = function
+    | x :: xs -> if x = event then i else loop (i + 1) xs
+    | [] -> raise Not_found
+  in
+  loop 0 all
