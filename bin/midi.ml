@@ -44,22 +44,54 @@ let turn_off_everything device_id =
 let write_output { device; _ } msg =
   Portmidi.write_output device msg |> handle_error
 
-type tone = {
+type tone_old = {
   base_note : char;
   first : char;
   second : char;
   third : char;
   fourth : char;
+  fifth : char;
+  sixth : char;
 }
 
-let major base_note =
+let _major base_note =
   {
     base_note = Char.chr base_note;
     first = Char.chr @@ (base_note + 2);
     second = Char.chr @@ (base_note + 4);
     third = Char.chr @@ (base_note + 5);
     fourth = Char.chr @@ (base_note + 7);
+    fifth = Char.chr @@ (base_note + 9);
+    sixth = Char.chr @@ (base_note + 11);
   }
+
+type tone = int -> char
+
+let partition note_as_int =
+  (*
+0 -> (0, 0)
+1 -> (0,1)
+(...)
+6 -> (0,6)
+7 -> (1,0)
+8 -> (1,1)
+*)
+  let scale_func = note_as_int mod 7 in
+  let octave = (note_as_int - scale_func) / 7 in
+  (octave, scale_func)
+
+let major base_note i =
+  let octave, scale_func = partition i in
+  match scale_func with
+  | 0 -> Char.chr @@ (base_note + (12 * octave))
+  | 1 -> Char.chr @@ (base_note + 2 + (12 * octave))
+  | 2 -> Char.chr @@ (base_note + 4 + (12 * octave))
+  | 3 -> Char.chr @@ (base_note + 5 + (12 * octave))
+  | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
+  | 5 -> Char.chr @@ (base_note + 9 + (12 * octave))
+  | 6 -> Char.chr @@ (base_note + 11 + (12 * octave))
+  | _ ->
+      failwith "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
 
 let overtones base_note =
   {
@@ -68,6 +100,10 @@ let overtones base_note =
     second = Char.chr @@ (base_note + 19);
     third = Char.chr @@ (base_note + 31);
     fourth = Char.chr @@ (base_note + 35);
+    fifth = Char.chr base_note;
+    (*FIXME*)
+    sixth = Char.chr base_note;
+    (*FIXME*)
   }
 
 let shutdown { device; device_id } =
