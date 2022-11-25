@@ -28,7 +28,7 @@ let play ~tracing device_id argv =
       Unix.stdin Unix.stdout Unix.stderr
   in
   Unix.sleepf 0.1;
-  tracing device (Util.child_alive proc) (Some (".", proc)) (Midi.major 48);
+  tracing device (Util.child_alive proc) (Some (".", proc)) (Midi.nice_scale 48);
   print_endline "got to the end";
   match Midi.shutdown device with
   | Ok () -> 0

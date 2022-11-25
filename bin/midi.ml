@@ -93,6 +93,32 @@ let major base_note i =
   | _ ->
       failwith "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
 
+let nice_scale base_note i =
+  let octave, scale_func = partition i in
+  match scale_func with
+  | 0 -> Char.chr @@ (base_note + (12 * octave))
+  | 1 -> Char.chr @@ (base_note + 2 + (12 * octave))
+  | 2 -> Char.chr @@ (base_note + 3 + (12 * octave))
+  | 3 -> Char.chr @@ (base_note + 4 + (12 * octave))
+  | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
+  | 5 -> Char.chr @@ (base_note + 9 + (12 * octave))
+  | 6 -> Char.chr @@ (base_note + 12 + (12 * octave))
+  | _ ->
+      failwith "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
+
+let blue base_note i =
+  let octave, scale_func = partition i in
+  match scale_func with
+  | 0 -> Char.chr @@ (base_note + (12 * octave))
+  | 1 -> Char.chr @@ (base_note + 3 + (12 * octave))
+  | 2 -> Char.chr @@ (base_note + 5 + (12 * octave))
+  | 3 -> Char.chr @@ (base_note + 6 + (12 * octave))
+  | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
+  | 5 -> Char.chr @@ (base_note + 10 + (12 * octave))
+  | 6 -> Char.chr @@ (base_note + 12 + (12 * octave))
+  | _ ->
+      failwith "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
+
 let overtones base_note =
   {
     base_note = Char.chr base_note;
