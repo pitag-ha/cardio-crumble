@@ -33,31 +33,23 @@ let runtime_begin device tones _domain_id ts event =
         (Runtime_events.runtime_phase_name event)
         ts
 
-let runtime_end _device _domain_id _ts = function
-  | EV_MAJOR ->
-      (* Midi.(write_output  [ message_off ~note:third_overtone ~volume:'\070' () ]); *)
-      Printf.printf "%f: end of EV_MAJOR\n" (Sys.time ())
-  | EV_MAJOR_SWEEP -> () (* Printf.printf "end of EV_MAJOR_SWEEP\n" *)
-  | EV_MAJOR_MARK_ROOTS -> ()
-  (* Printf.printf "end of EV_MAJOR_MARK_ROOTS\n" *)
-  | EV_MAJOR_MARK ->
-      (* Midi.(
-         write_output [ message_off ~note:fourth_overtone ~volume:'\060' () ]); *)
-      Printf.printf "%f: end of EV_MAJOR_MARK\n" (Sys.time ())
-  | EV_MINOR ->
-      (* Midi.(write_output [ message_off ~note:first_overtone () ]); *)
-      Printf.printf "%f: end of EV_MINOR\n" (Sys.time ())
-  | EV_MINOR_LOCAL_ROOTS ->
-      (* Midi.(
-         write_output [ message_off ~note:second_overtone ~volume:'\070' () ]); *)
-      Printf.printf "%f: end of EV_MINOR_LOCAL_ROOTS\n" (Sys.time ())
-  | _ -> ()
+let runtime_end device tones _domain_id ts event =
+  let note = Play.event_to_note tones event in
+  match adjust_time ts with
+  | None -> ()
+  | Some ts ->
+      Midi.(
+        write_output device
+          [ message_off ~note ~timestamp:ts (* ~volume:'\070' *) () ]);
+      Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
+        (Runtime_events.runtime_phase_name event)
+        ts
 
 let tracing device child_alive path_pid tones =
   let c = create_cursor path_pid in
   let runtime_begin = runtime_begin device tones in
+  let runtime_end = runtime_end device tones in
   let runtime_counter = runtime_counter device tones in
-  let runtime_end = runtime_end device in
   let cbs = Callbacks.create ~runtime_begin ~runtime_end ~runtime_counter () in
   while child_alive () do
     ignore (read_poll c cbs None);
