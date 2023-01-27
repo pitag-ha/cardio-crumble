@@ -12,24 +12,7 @@ let cmds = [ List_devices.cmd; Simple_engine.cmd; Stat_engine.cmd ]
 
 let doc = "Auditively feel the work of the runtime "
 let sdocs = Manpage.s_common_options
-
-let man =
-  [
-    `S Manpage.s_description;
-    `P "$(mname) releases dune packages to opam.";
-    `P
-      "Without arguments, $(mname) acts like $(b,dune-release bistro): refer \
-       to $(b,dune-release help bistro) for help about the default behavior.";
-    `P "Use '$(mname) help release' for help to release a package.";
-    `Noblank;
-    `P "Use '$(mname) help troubleshoot' for a few troubleshooting tips.";
-    `Noblank;
-    `P "Use '$(mname) help $(i,COMMAND)' for help about $(i,COMMAND).";
-    `S Manpage.s_bugs;
-    `P "Report them, see $(i,%%PKG_HOMEPAGE%%) for contact information.";
-    `S Manpage.s_authors;
-    `P "Daniel C. Buenzli, $(i,http://erratique.ch)";
-  ]
+let man = [ `S Manpage.s_description; `P "Listen to the OCaml runtime" ]
 
 let main =
   Cmd.group

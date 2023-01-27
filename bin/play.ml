@@ -1,10 +1,10 @@
-let event_to_note (tones : Midi.tone) event = tones (Event.event_to_int event)
+let event_to_note tones event = tones (Event.event_to_int event)
 
 let handle_control_c device =
   let handle =
     Sys.Signal_handle
       (fun _ ->
-        match Midi.shutdown device with
+        match Midi.Device.shutdown device with
         | Ok _ -> ()
         | Error msg ->
             let s = Midi.error_to_string msg in
@@ -19,7 +19,7 @@ let play ~tracing device_id scale argv =
     | prog :: args -> (prog, Array.of_list args)
     | _ -> failwith "No program given"
   in
-  let device = Midi.create_device device_id in
+  let device = Midi.Device.create device_id in
   let _ = handle_control_c device in
   (* Extract the user supplied program and arguments. *)
   let proc =
@@ -32,7 +32,7 @@ let play ~tracing device_id scale argv =
     (Some (".", proc))
     (Midi.Scale.get ~base_note:48 scale);
   print_endline "got to the end";
-  match Midi.shutdown device with
+  match Midi.Device.shutdown device with
   | Ok () -> 0
   | Error msg ->
       let s = Midi.error_to_string msg in
