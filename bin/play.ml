@@ -13,7 +13,7 @@ let handle_control_c device =
   in
   Sys.(signal sigint handle)
 
-let play ~tracing device_id argv =
+let play ~tracing device_id scale argv =
   let prog, args =
     match argv with
     | prog :: args -> (prog, Array.of_list args)
@@ -28,7 +28,9 @@ let play ~tracing device_id argv =
       Unix.stdin Unix.stdout Unix.stderr
   in
   Unix.sleepf 0.1;
-  tracing device (Util.child_alive proc) (Some (".", proc)) (Midi.nice_scale 48);
+  tracing device (Util.child_alive proc)
+    (Some (".", proc))
+    (Midi.Scale.get ~base_note:48 scale);
   print_endline "got to the end";
   match Midi.shutdown device with
   | Ok () -> 0
@@ -43,3 +45,16 @@ let argv = Arg.(non_empty & pos_all string [] & info [] ~docv:"ARGV")
 
 let device_id =
   Arg.(value & opt int 0 & info [ "d"; "device_id" ] ~docv:"DEVICE_ID")
+
+let scale_enum =
+  Arg.enum
+    [
+      ("nice", Midi.Scale.Nice);
+      ("major", Midi.Scale.Major);
+      ("blue", Midi.Scale.Blue);
+      ("overtones", Midi.Scale.Overtones);
+    ]
+
+let scale =
+  Arg.(
+    value & opt scale_enum Midi.Scale.Nice & info [ "s"; "scale" ] ~docv:"SCALE")

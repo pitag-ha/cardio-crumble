@@ -119,5 +119,8 @@ let tracing (bpm : int) device child_alive path_pid tones =
 
 let bpm = Arg.(value & opt int 120 & info [ "bpm"; "--bpm" ] ~docv:"BPM")
 let stat_play bpm = Play.play ~tracing:(tracing bpm)
-let play_t = Term.(const stat_play $ bpm $ Play.device_id $ Play.argv)
+
+let play_t =
+  Term.(const stat_play $ bpm $ Play.device_id $ Play.scale $ Play.argv)
+
 let cmd = Cmd.v (Cmd.info "stat_engine") play_t

@@ -57,5 +57,5 @@ let tracing device child_alive path_pid tones =
   done
 
 let simple_play = Play.play ~tracing
-let play_t = Term.(const simple_play $ Play.device_id $ Play.argv)
+let play_t = Term.(const simple_play $ Play.device_id $ Play.scale $ Play.argv)
 let cmd = Cmd.v (Cmd.info "simple_engine") play_t
