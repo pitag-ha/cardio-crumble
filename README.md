@@ -36,7 +36,7 @@ You now have a fully functional build of Cardio-crumble! Time to jam!
 
 Cardio-crumble is an executable, that takes at least three arguments:
 
-- A device id: This represent a MIDI device connected to your system.
+- A device id: This represents a MIDI device connected to your system.
 - An engine name: There are two so called *engines* in cardio-crumble. An engine is best viewed as a way to procress events, and how to approach generating sequences of notes from them.
 - A path to an OCaml program: This is the program that cardio-crumble will listen to. This program needs to be built with OCaml 5.0, as runtime events were note available before this release. Otherwise there's no restriction!
 
