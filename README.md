@@ -46,7 +46,7 @@ There is also a few optional parameters, each specific to each engines, in order
 
 Beforehand, make sure you have a MIDI device correctly set up on your machine (be it software, or hardware.).
 
-For software synthesizers, refer to our wiki page: [MIDI Setup](https://github.com/pitag-ha/cardio-crumble/wiki/MIDI-Setup)
+If you don't have a MIDI device at hand, you can set up a software synthesizer. For that, refer to our wiki page: [MIDI Setup](https://github.com/pitag-ha/cardio-crumble/wiki/MIDI-Setup)
 
 
 Find a device id by listing all the MIDI devices on your system
@@ -66,9 +66,9 @@ device 1
     output: true
 ```
 
-You can see that you have one `output` device (which is a device you can send MIDI data to). We will use it going forward (so `device_id` should be `1`!)
+You can see that in this example we have one `output` device (which is a device you can send MIDI data to). We will use it going forward (so `device_id` should be `1`!)
 
-Now running `cardio-crumble` is pretty straightforward!
+Now you're all set and can try running `cardio-crumble`!
 ```shell
 dune exec -- bin/main.exe stat_engine --device_id=1 _build/default/test_executable/main.exe
 ```
@@ -84,7 +84,7 @@ dune exec -- bin/main.exe stat_engine --device_id=1 --bpm=60 -- my_program -- my
 
 ### Engines and optional parameters
 
-There exists current two engines in cardio-crumble:
+There are currently two engines in cardio-crumble:
 
 - `stat_engine` will aggregate MIDI events into a buffer, and will rhytmically output notes onto the MIDI device by measuring which events were the most important in a given time slice.
 - `simple_engine` will output events as they are processed, with a simple mapping. (one event received = one note emitted.)
@@ -99,7 +99,7 @@ dune exec bin/main.exe -- stat_engine --help
 
 Notable options:
 
-- `--scale` Allows you to select a musical [scale](https://en.wikipedia.org/wiki/Scale_(music)) to which `cardio-crumble` will stick to when generating notes. Available options are `minor`, `blue`, `major`, and the experimental `nice` scale.
+- `--scale` Allows you to select a musical [scale](https://en.wikipedia.org/wiki/Scale_(music)) to which `cardio-crumble` will stick to when generating notes. Available options are `minor`, `blue`, `major`, and the ~~...nice...~~ experimental `nice` scale.
 - `--bpm` (stat_engine only): Allows you to set the tempo that `cardio-crumble` will follow when playing notes.
 
 ## Demo! Cardio Dolphin Dreams about Mario, Bubbles and Coral Reefs
