@@ -22,10 +22,10 @@ let runtime_begin _domain_id _ts event =
   add_to_hashtbl event_table event_table_lock event;
   add_to_hashtbl quantifier_table quantifier_table_lock event
 
-let polling_main_func child_alive path_pid _ =
+let polling_main_func path_pid _ =
   let c = create_cursor path_pid in
   let cbs = Callbacks.create ~runtime_begin () in
-  while child_alive () do
+  while not (Atomic.get Watchdog.terminate) do
     ignore (read_poll c cbs None);
     Unix.sleepf 0.1
   done
@@ -108,14 +108,18 @@ let rec sequencer_main_func num_beats tones device bpm _ =
   Hashtbl.clear event_table;
   Mutex.unlock event_table_lock;
   (* Unix.sleepf (60. /. Float.of_int bpm); *)
-  sequencer_main_func (num_beats + 1) tones device bpm ()
+  if Atomic.get Watchdog.terminate then
+    ()
+  else
+    sequencer_main_func (num_beats + 1) tones device bpm ()
 
 let tracing (bpm : int) device child_alive path_pid tones =
-  let polling_domain = Domain.spawn (polling_main_func child_alive path_pid) in
+  let polling_domain = Domain.spawn (polling_main_func path_pid) in
   let sequencer_domain =
     Domain.spawn (sequencer_main_func 1 tones device bpm)
   in
-  List.iter Domain.join [ polling_domain; sequencer_domain ]
+  let watchdog_domain = Domain.spawn (Watchdog.watchdog_func child_alive) in
+  List.iter Domain.join [ watchdog_domain; polling_domain; sequencer_domain ]
 
 let bpm = Arg.(value & opt int 120 & info [ "bpm"; "--bpm" ] ~docv:"BPM")
 let stat_play bpm = Play.play ~tracing:(tracing bpm)
