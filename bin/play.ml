@@ -1,15 +1,8 @@
 let event_to_note tones event = tones (Event.event_to_int event)
 
-let handle_control_c device =
+let handle_control_c () =
   let handle =
-    Sys.Signal_handle
-      (fun _ ->
-        match Midi.Device.shutdown device with
-        | Ok _ -> ()
-        | Error msg ->
-            let s = Midi.error_to_string msg in
-            Printf.eprintf "(ctrl-c handler) Error during device shutdown: %s" s;
-            exit 1)
+    Sys.Signal_handle (fun _ -> Atomic.set Watchdog.terminate true)
   in
   Sys.(signal sigint handle)
 
@@ -20,7 +13,7 @@ let play ~tracing device_id scale argv =
     | _ -> failwith "No program given"
   in
   let device = Midi.Device.create device_id in
-  let _ = handle_control_c device in
+  let _ = handle_control_c () in
   (* Extract the user supplied program and arguments. *)
   let proc =
     Unix.create_process_env prog args

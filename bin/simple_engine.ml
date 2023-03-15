@@ -51,10 +51,12 @@ let tracing device child_alive path_pid tones =
   let runtime_end = runtime_end device tones in
   let runtime_counter = runtime_counter device tones in
   let cbs = Callbacks.create ~runtime_begin ~runtime_end ~runtime_counter () in
-  while child_alive () do
+  let watchdog_domain = Domain.spawn (Watchdog.watchdog_func child_alive)  in
+  while not (Atomic.get Watchdog.terminate) do
     ignore (read_poll c cbs None);
     Unix.sleepf 0.1
-  done
+  done;
+  Domain.join watchdog_domain
 
 let simple_play = Play.play ~tracing
 let play_t = Term.(const simple_play $ Play.device_id $ Play.scale $ Play.argv)
