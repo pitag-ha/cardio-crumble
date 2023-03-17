@@ -19,7 +19,7 @@
  (name cardio_crumble)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends ocaml dune portmidi cmdliner)
  (tags
   (topics "to describe" your project)))
 
