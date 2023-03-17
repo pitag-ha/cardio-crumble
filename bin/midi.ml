@@ -52,7 +52,7 @@ let write_output { Device.device; _ } msg =
   Portmidi.write_output device msg |> handle_error
 
 module Scale = struct
-  type t = Major | Nice | Blue | Overtones
+  type t = Major | Minor | Nice | Blue | Overtones
 
   let partition note_as_int =
     (*
@@ -77,6 +77,20 @@ module Scale = struct
     | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
     | 5 -> Char.chr @@ (base_note + 9 + (12 * octave))
     | 6 -> Char.chr @@ (base_note + 11 + (12 * octave))
+    | _ ->
+        failwith
+          "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
+
+  let minor base_note i =
+    let octave, scale_func = partition i in
+    match scale_func with
+    | 0 -> Char.chr @@ (base_note + (12 * octave))
+    | 1 -> Char.chr @@ (base_note + 2 + (12 * octave)) 
+    | 2 -> Char.chr @@ (base_note + 3 + (12 * octave))
+    | 3 -> Char.chr @@ (base_note + 5 + (12 * octave))
+    | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
+    | 5 -> Char.chr @@ (base_note + 8 + (12 * octave))
+    | 6 -> Char.chr @@ (base_note + 10 + (12 * octave))
     | _ ->
         failwith
           "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
@@ -127,5 +141,6 @@ module Scale = struct
     | Nice -> nice_scale base_note
     | Blue -> blue base_note
     | Major -> major base_note
+    | Minor -> minor base_note
     | Overtones -> overtones base_note
 end
