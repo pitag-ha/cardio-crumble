@@ -52,6 +52,7 @@ let scale_enum =
       ("nice", Midi.Scale.Nice);
       ("major", Midi.Scale.Major);
       ("minor", Midi.Scale.Minor);
+      ("pentatonic", Midi.Scale.Pentatonic);
       ("blue", Midi.Scale.Blue);
       ("overtones", Midi.Scale.Overtones);
     ]

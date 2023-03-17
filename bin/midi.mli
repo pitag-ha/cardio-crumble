@@ -19,6 +19,6 @@ val write_output : Device.t -> Portmidi.Portmidi_event.t list -> unit
 
 module Scale :
   sig
-    type t = Major | Minor | Nice | Blue | Overtones
+    type t = Major | Minor | Pentatonic | Nice | Blue | Overtones
     val get : base_note:int -> t -> int -> char
   end
