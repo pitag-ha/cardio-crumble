@@ -3,4 +3,3 @@ _build
 *.merlin
 _opam
 *.events
-.vscode
