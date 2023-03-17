@@ -19,7 +19,18 @@
  (name cardio_crumble)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune portmidi cmdliner)
+ (depends 
+  (ocaml
+    (>= 5.0.0))
+  (dune
+    (>= 3.7.0))
+  (portmidi
+    (= 0.1))
+  (cmdliner
+    (= 1.1.1))
+  (ocamlformat
+    (>= 0.24.1))
+)
  (tags
   (topics "to describe" your project)))
 
