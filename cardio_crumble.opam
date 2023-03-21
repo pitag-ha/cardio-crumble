@@ -15,8 +15,6 @@ depends: [
   "portmidi" {>= "0.1"}
   "cmdliner" {>= "1.1.1"}
   "odoc" {with-doc}
-  "portmidi"
-  "cmdliner"
 ]
 build: [
   ["dune" "subst"] {dev}
