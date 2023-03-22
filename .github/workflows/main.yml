@@ -1,13 +1,14 @@
-name: Builds, tests & co
+name: Main workflow
 
 on:
-  [pull_request, push]
-permissions: read-all
+  pull_request:
+  push:
+  schedule:
+    # Prime the caches every Monday
+    - cron: 0 1 * * MON
 
 jobs:
-  build-and-test:
-    name: Build and Test
-
+  build:
     strategy:
       fail-fast: false
       matrix:
@@ -17,39 +18,20 @@ jobs:
           - windows-latest
         ocaml-compiler:
           - 4.14.x
-        include:
-          - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.4.14.0+options,ocaml-option-32bit
-          - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.4.14.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
-          - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.4.12.0+domains
-            opam-repositories: |
-              multicore: https://github.com/ocaml-multicore/multicore-opam.git
-              default: https://github.com/ocaml/opam-repository.git
+
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v3
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
         with:
-          node-version: 16.x
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - name: Install npm packages
-        if: runner.os == 'Linux'
-        run: yarn install --immutable
+      - run: opam install . --deps-only --with-test
 
-      - name: Check formatting
-        if: runner.os == 'Linux'
-        run: yarn fmt:check
+      - run: opam exec -- dune build
 
-      - name: Check lint
-        if: runner.os == 'Linux'
-        run: yarn lint
-
-      - name: Check type
-        if: runner.os == 'Linux'
-        run: yarn typecheck
+      - run: opam exec -- dune runtest
