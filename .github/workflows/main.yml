@@ -36,7 +36,17 @@ jobs:
       - run: opam exec -- dune runtest
 
   lint-fmt:
+  strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        ocaml-compiler:
+          - 5.0.x
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -50,15 +60,25 @@ jobs:
         uses: ocaml/setup-ocaml/lint-fmt@v2
 
   lint-opam:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        ocaml-compiler:
+          - 5.0.x
+
       runs-on: ${{ matrix.os }}
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
 
-        - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-        - name: Lint opam
-          uses: ocaml/setup-ocaml/lint-opam@v2
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+      uses: ocaml/setup-ocaml@v2
+      with:
+        ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - name: Lint opam
+        uses: ocaml/setup-ocaml/lint-opam@v2
