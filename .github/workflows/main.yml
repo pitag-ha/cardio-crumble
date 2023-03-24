@@ -54,7 +54,7 @@ jobs:
           - ubuntu-latest
         ocaml-compiler:
           - 5.0.x
-      runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
