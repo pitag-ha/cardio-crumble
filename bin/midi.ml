@@ -2,6 +2,8 @@ open! Import
 open Result.Syntax
 module Event = Portmidi.Portmidi_event
 
+  (* type noteAndVolume = {note: char; vol: char} *)
+
 let error_to_string msg =
   Portmidi.Portmidi_error.sexp_of_t msg |> Sexplib0.Sexp.to_string
 
@@ -39,10 +41,10 @@ module Device = struct
     turn_off_everything device_id
 end
 
-let message_on ~note ~timestamp ?(volume = '\090') () =
+let message_on ~note ~timestamp ~volume () =
   Event.create ~status:'\144' ~data1:note ~data2:volume ~timestamp
 
-let message_off ~note ~timestamp ?(volume = '\090') () =
+let message_off ~note ~timestamp ~volume () =
   Event.create ~status:'\128' ~data1:note ~data2:volume ~timestamp
 
 (* Best function ever!! <3 *)
@@ -70,13 +72,13 @@ module Scale = struct
   let major base_note i =
     let octave, scale_func = partition i in
     match scale_func with
-    | 0 -> Char.chr @@ (base_note + (12 * octave))
-    | 1 -> Char.chr @@ (base_note + 2 + (12 * octave))
-    | 2 -> Char.chr @@ (base_note + 4 + (12 * octave))
-    | 3 -> Char.chr @@ (base_note + 5 + (12 * octave))
-    | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
-    | 5 -> Char.chr @@ (base_note + 9 + (12 * octave))
-    | 6 -> Char.chr @@ (base_note + 11 + (12 * octave))
+    | 0 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' )
+    | 1 -> ( Char.chr @@ (base_note + 2 + (12 * octave)) , '\070' )
+    | 2 -> ( Char.chr @@ (base_note + 4 + (12 * octave)) , '\070' )
+    | 3 -> ( Char.chr @@ (base_note + 5 + (12 * octave)) , '\070' )
+    | 4 -> ( Char.chr @@ (base_note + 7 + (12 * octave)) , '\070' )
+    | 5 -> ( Char.chr @@ (base_note + 9 + (12 * octave)) , '\070' )
+    | 6 -> ( Char.chr @@ (base_note + 11 + (12 * octave)) , '\070' )
     | _ ->
         failwith
           "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
@@ -84,13 +86,13 @@ module Scale = struct
   let minor base_note i =
     let octave, scale_func = partition i in
     match scale_func with
-    | 0 -> Char.chr @@ (base_note + (12 * octave))
-    | 1 -> Char.chr @@ (base_note + 2 + (12 * octave))
-    | 2 -> Char.chr @@ (base_note + 3 + (12 * octave))
-    | 3 -> Char.chr @@ (base_note + 5 + (12 * octave))
-    | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
-    | 5 -> Char.chr @@ (base_note + 8 + (12 * octave))
-    | 6 -> Char.chr @@ (base_note + 10 + (12 * octave))
+    | 0 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' )
+    | 1 -> ( Char.chr @@ (base_note + 2 + (12 * octave)) , '\070' )
+    | 2 -> ( Char.chr @@ (base_note + 3 + (12 * octave)) , '\070' )
+    | 3 -> ( Char.chr @@ (base_note + 5 + (12 * octave)) , '\070' )
+    | 4 -> ( Char.chr @@ (base_note + 7 + (12 * octave)) , '\070' )
+    | 5 -> ( Char.chr @@ (base_note + 8 + (12 * octave)) , '\070' )
+    | 6 -> ( Char.chr @@ (base_note + 10 + (12 * octave)) , '\070' )
     | _ ->
         failwith
           "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
@@ -98,13 +100,13 @@ module Scale = struct
   let pentatonic base_note i =
     let octave, scale_func = partition i in
     match scale_func with
-    | 0 -> Char.chr @@ (base_note + (12 * octave))
-    | 1 -> Char.chr @@ (base_note + 2 + (12 * octave))
-    | 2 -> Char.chr @@ (base_note + 4 + (12 * octave))
-    | 3 -> Char.chr @@ (base_note + 7 + (12 * octave))
-    | 4 -> Char.chr @@ (base_note + 9 + (12 * octave))
-    | 5 -> Char.chr @@ (base_note + 12 + (12 * octave))
-    | 6 -> Char.chr @@ (base_note + 14 + (12 * octave))
+    | 0 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' )
+    | 1 -> ( Char.chr @@ (base_note + 2 + (12 * octave)) , '\070' )
+    | 2 -> ( Char.chr @@ (base_note + 4 + (12 * octave)) , '\070' )
+    | 3 -> ( Char.chr @@ (base_note + 7 + (12 * octave)) , '\070' )
+    | 4 -> ( Char.chr @@ (base_note + 9 + (12 * octave)) , '\070' )
+    | 5 -> ( Char.chr @@ (base_note + 12 + (12 * octave)) , '\070' )
+    | 6 -> ( Char.chr @@ (base_note + 14 + (12 * octave)) , '\070' )
     | _ ->
         failwith
           "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
@@ -112,13 +114,13 @@ module Scale = struct
   let nice_scale base_note i =
     let octave, scale_func = partition i in
     match scale_func with
-    | 0 -> Char.chr @@ (base_note + (12 * octave))
-    | 1 -> Char.chr @@ (base_note + 2 + (12 * octave))
-    | 2 -> Char.chr @@ (base_note + 3 + (12 * octave))
-    | 3 -> Char.chr @@ (base_note + 4 + (12 * octave))
-    | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
-    | 5 -> Char.chr @@ (base_note + 9 + (12 * octave))
-    | 6 -> Char.chr @@ (base_note + 12 + (12 * octave))
+    | 0 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' )
+    | 1 -> ( Char.chr @@ (base_note + 2 + (12 * octave)) , '\070' )
+    | 2 -> ( Char.chr @@ (base_note + 3 + (12 * octave)) , '\070' )
+    | 3 -> ( Char.chr @@ (base_note + 4 + (12 * octave)) , '\070' )
+    | 4 -> ( Char.chr @@ (base_note + 7 + (12 * octave)) , '\070' )
+    | 5 -> ( Char.chr @@ (base_note + 9 + (12 * octave)) , '\070' )
+    | 6 -> ( Char.chr @@ (base_note + 12 + (12 * octave)) , '\070' )
     | _ ->
         failwith
           "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
@@ -126,13 +128,13 @@ module Scale = struct
   let blue base_note i =
     let octave, scale_func = partition i in
     match scale_func with
-    | 0 -> Char.chr @@ (base_note + (12 * octave))
-    | 1 -> Char.chr @@ (base_note + 3 + (12 * octave))
-    | 2 -> Char.chr @@ (base_note + 5 + (12 * octave))
-    | 3 -> Char.chr @@ (base_note + 6 + (12 * octave))
-    | 4 -> Char.chr @@ (base_note + 7 + (12 * octave))
-    | 5 -> Char.chr @@ (base_note + 10 + (12 * octave))
-    | 6 -> Char.chr @@ (base_note + 12 + (12 * octave))
+    | 0 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' )
+    | 1 -> ( Char.chr @@ (base_note + 3 + (12 * octave)) , '\070' )
+    | 2 -> ( Char.chr @@ (base_note + 5 + (12 * octave)) , '\070' )
+    | 3 -> ( Char.chr @@ (base_note + 6 + (12 * octave)) , '\070' )
+    | 4 -> ( Char.chr @@ (base_note + 7 + (12 * octave)) , '\070' )
+    | 5 -> ( Char.chr @@ (base_note + 10 + (12 * octave)) , '\070' )
+    | 6 -> ( Char.chr @@ (base_note + 12 + (12 * octave)) , '\070' )
     | _ ->
         failwith
           "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
@@ -140,13 +142,13 @@ module Scale = struct
   let overtones base_note i =
     let octave, scale_func = partition i in
     match scale_func with
-    | 0 -> Char.chr @@ (base_note + (12 * octave))
-    | 1 -> Char.chr @@ (base_note + 12 + (12 * octave))
-    | 2 -> Char.chr @@ (base_note + 19 + (12 * octave))
-    | 3 -> Char.chr @@ (base_note + 31 + (12 * octave))
-    | 4 -> Char.chr @@ (base_note + 35 + (12 * octave))
-    | 5 -> Char.chr @@ (base_note + (12 * octave)) (*FIXME*)
-    | 6 -> Char.chr @@ (base_note + (12 * octave)) (*FIXME*)
+    | 0 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' )
+    | 1 -> ( Char.chr @@ (base_note + 12 + (12 * octave)) , '\070' )
+    | 2 -> ( Char.chr @@ (base_note + 19 + (12 * octave)) , '\070' )
+    | 3 -> ( Char.chr @@ (base_note + 31 + (12 * octave)) , '\070' )
+    | 4 -> ( Char.chr @@ (base_note + 35 + (12 * octave)) , '\070' )
+    | 5 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' ) (*FIXME*)
+    | 6 -> ( Char.chr @@ (base_note + (12 * octave)) , '\070' ) (*FIXME*)
     | _ ->
         failwith
           "Why on earth is something mod 7 not element of {0,1,2,3,4,5,6}?"
