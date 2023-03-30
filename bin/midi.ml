@@ -2,6 +2,12 @@ open! Import
 open Result.Syntax
 module Event = Portmidi.Portmidi_event
 
+let bend_pitch ~bend ~timestamp () =
+  let bend_as_integer = int_of_char bend in
+  let data1 = bend_as_integer land 0b1111111 in
+  let data2 = bend_as_integer lsr 7 in
+    Event.create ~status:'\224' ~data1:data1 ~data2:data2 ~timestamp
+
 let error_to_string msg =
   Portmidi.Portmidi_error.sexp_of_t msg |> Sexplib0.Sexp.to_string
 
