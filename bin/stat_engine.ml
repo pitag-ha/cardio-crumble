@@ -102,7 +102,7 @@ let rec sequencer_main_func num_beats tones device bpm _ =
             write_output device
               [
                 message_on ~note:note.Scale.note ~timestamp:0l
-                  ~volume:note.Scale.vol ();
+                  ~volume:note.Scale.volume ();
               ]);
           (*FIXME: don't sleep, but use a timestamp*)
           Unix.sleepf (60. /. Float.of_int bpm /. Float.of_int n))
