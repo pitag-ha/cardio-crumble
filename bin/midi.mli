@@ -19,7 +19,7 @@ val write_output : Device.t -> Portmidi.Portmidi_event.t list -> unit
 
 module Scale : sig
   type t = Major | Minor | Pentatonic | Nice | Blue | Overtones
-  type noteAndVolume = { note : char; vol : char }
+  type note_data = { note : char; volume : char }
 
-  val get : base_note:int -> t -> int -> noteAndVolume
+  val get : base_note:int -> t -> int -> note_data
 end
