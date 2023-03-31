@@ -10,15 +10,12 @@ module Device : sig
 end
 
 val message_on : note:char -> timestamp:int32 -> volume:char -> unit -> Event.t
-
-val message_off :
-  note:char -> timestamp:int32 -> volume:char -> unit -> Event.t
-
+val message_off : note:char -> timestamp:int32 -> volume:char -> unit -> Event.t
 val write_output : Device.t -> Portmidi.Portmidi_event.t list -> unit
 
 module Scale : sig
   type t = Major | Minor | Pentatonic | Nice | Blue | Overtones
-  type noteAndVolume = {note: char; vol: char}
+  type noteAndVolume = { note : char; vol : char }
 
   val get : base_note:int -> t -> int -> noteAndVolume
 end
