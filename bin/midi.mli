@@ -1,6 +1,6 @@
 module Event = Portmidi.Portmidi_event
 
-val bend_pitch : bend:char -> timestamp:int32 -> Event.t
+val bend_pitch : bend:int -> timestamp:int32 -> Event.t
 
 val error_to_string : Portmidi.Portmidi_error.t -> string
 
