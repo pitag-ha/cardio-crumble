@@ -27,31 +27,21 @@ let runtime_counter device tones _domain_id ts counter _value =
   | _ -> ()
 
 let runtime_begin device tones _domain_id ts event =
-  let note = Play.event_to_note tones event in
+  let { Midi.Scale.note; Midi.Scale.volume } = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(
-        write_output device
-          [
-            message_on ~note:note.Scale.note ~timestamp:ts
-              ~volume:note.Scale.volume ();
-          ]);
+      Midi.(write_output device [ message_off ~note ~timestamp:ts ~volume () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
 
 let runtime_end device tones _domain_id ts event =
-  let note = Play.event_to_note tones event in
+  let { Midi.Scale.note; Midi.Scale.volume } = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(
-        write_output device
-          [
-            message_off ~note:note.Scale.note ~timestamp:ts
-              ~volume:note.Scale.volume ();
-          ]);
+      Midi.(write_output device [ message_off ~note ~timestamp:ts ~volume () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
