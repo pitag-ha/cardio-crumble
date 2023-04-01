@@ -17,17 +17,15 @@ let runtime_counter device tones _domain_id ts counter _value =
   | EV_C_MINOR_PROMOTED ->
       starting_time := Some ts;
       Midi.(
+        let {Scale.note; volume} = tones 0 in
         write_output device
-          [
-            message_on ~note:(tones 0).Scale.note ~timestamp:0l
-              ~volume:(tones 0).Scale.volume ();
-          ])
+          [ message_on ~note ~timestamp:0l ~volume () ])
       (* Unix.sleep 5;
          Midi.(write_output [ message_off ~note:base_note () ]) *)
   | _ -> ()
 
 let runtime_begin device tones _domain_id ts event =
-  let { Midi.Scale.note; Midi.Scale.volume } = Play.event_to_note tones event in
+  let { Midi.Scale.note; volume } = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
@@ -37,7 +35,7 @@ let runtime_begin device tones _domain_id ts event =
         ts
 
 let runtime_end device tones _domain_id ts event =
-  let { Midi.Scale.note; Midi.Scale.volume } = Play.event_to_note tones event in
+  let { Midi.Scale.note; volume } = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
