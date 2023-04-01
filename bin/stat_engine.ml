@@ -97,10 +97,9 @@ let rec sequencer_main_func num_beats tones device bpm _ =
     (function
       | None -> ()
       | Some event ->
-          let note = Play.event_to_note tones event in
+          let { Midi.Scale.note; volume } = Play.event_to_note tones event in
           Midi.(
-            write_output device
-              [ message_on ~note ~timestamp:0l (* ~volume:'\070' *) () ]);
+            write_output device [ message_on ~note ~timestamp:0l ~volume () ]);
           (*FIXME: don't sleep, but use a timestamp*)
           Unix.sleepf (60. /. Float.of_int bpm /. Float.of_int n))
     interesting_stuff;

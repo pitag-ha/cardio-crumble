@@ -16,31 +16,29 @@ let runtime_counter device tones _domain_id ts counter _value =
   match counter with
   | EV_C_MINOR_PROMOTED ->
       starting_time := Some ts;
-      Midi.(write_output device [ message_on ~note:(tones 0) ~timestamp:0l () ])
+      Midi.(
+        let { Scale.note; volume } = tones 0 in
+        write_output device [ message_on ~note ~timestamp:0l ~volume () ])
       (* Unix.sleep 5;
          Midi.(write_output [ message_off ~note:base_note () ]) *)
   | _ -> ()
 
 let runtime_begin device tones _domain_id ts event =
-  let note = Play.event_to_note tones event in
+  let { Midi.Scale.note; volume } = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(
-        write_output device
-          [ message_on ~note ~timestamp:ts (* ~volume:'\070' *) () ]);
+      Midi.(write_output device [ message_off ~note ~timestamp:ts ~volume () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
 
 let runtime_end device tones _domain_id ts event =
-  let note = Play.event_to_note tones event in
+  let { Midi.Scale.note; volume } = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(
-        write_output device
-          [ message_off ~note ~timestamp:ts (* ~volume:'\070' *) () ]);
+      Midi.(write_output device [ message_off ~note ~timestamp:ts ~volume () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
