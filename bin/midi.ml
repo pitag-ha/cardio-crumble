@@ -48,7 +48,7 @@ let message_off ~note ~timestamp ?(volume = '\090') () =
 let bend_pitch ~bend ~timestamp =
   let data1 = char_of_int (bend land 0b1111111) in
   let data2 = char_of_int (bend lsr 7) in
-  Event.create ~status:'\224' ~data1:data1 ~data2:data2 ~timestamp
+  Event.create ~status:'\224' ~data1 ~data2 ~timestamp
 
 (* Best function ever!! <3 *)
 let handle_error = function Ok _ -> () | Error _ -> ()
