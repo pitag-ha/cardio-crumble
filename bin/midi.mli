@@ -15,7 +15,12 @@ val message_off :
   note:char -> timestamp:int32 -> ?volume:char -> unit -> Event.t
 
 val bend_pitch : bend:int -> timestamp:int32 -> Event.t
+
 val control_change : cc:int -> value:int -> timestamp:int32 -> Event.t
+(** This helps to send MIDI Control Change messages
+
+    @raise Invalid_argument if [cc] is less than 119 *)
+
 val write_output : Device.t -> Portmidi.Portmidi_event.t list -> unit
 
 module Scale : sig
