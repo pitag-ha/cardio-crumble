@@ -9,9 +9,13 @@ module Device : sig
   val shutdown : t -> (unit, Portmidi.Portmidi_error.t) result
 end
 
-val message_on : note:char -> timestamp:int32 -> volume:char -> unit -> Event.t
-val message_off : note:char -> timestamp:int32 -> volume:char -> unit -> Event.t
-val bend_pitch : bend:int -> timestamp:int32 -> Event.t
+val message_on :
+  note:char -> timestamp:int32 -> volume:char -> channel:int -> unit -> Event.t
+
+val message_off :
+  note:char -> timestamp:int32 -> volume:char -> channel:int -> unit -> Event.t
+
+val bend_pitch : bend:int -> timestamp:int32 -> channel:int -> Event.t
 val write_output : Device.t -> Portmidi.Portmidi_event.t list -> unit
 
 module Scale : sig

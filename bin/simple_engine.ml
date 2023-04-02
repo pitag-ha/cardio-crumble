@@ -18,7 +18,8 @@ let runtime_counter device tones _domain_id ts counter _value =
       starting_time := Some ts;
       Midi.(
         let { Scale.note; volume } = tones 0 in
-        write_output device [ message_on ~note ~timestamp:0l ~volume () ])
+        write_output device
+          [ message_on ~note ~timestamp:0l ~volume ~channel:0 () ])
       (* Unix.sleep 5;
          Midi.(write_output [ message_off ~note:base_note () ]) *)
   | _ -> ()
@@ -28,7 +29,9 @@ let runtime_begin device tones _domain_id ts event =
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(write_output device [ message_off ~note ~timestamp:ts ~volume () ]);
+      Midi.(
+        write_output device
+          [ message_off ~note ~timestamp:ts ~volume ~channel:0 () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
@@ -38,7 +41,9 @@ let runtime_end device tones _domain_id ts event =
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(write_output device [ message_off ~note ~timestamp:ts ~volume () ]);
+      Midi.(
+        write_output device
+          [ message_off ~note ~timestamp:ts ~volume ~channel:0 () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
