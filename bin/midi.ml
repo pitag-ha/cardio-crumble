@@ -40,24 +40,21 @@ module Device = struct
 end
 
 let message_on ~note ~timestamp ~volume ~channel () =
-  if channel > 15 then raise (invalid_arg "Channel should be between 0 and 15")
-  else
-    let status = char_of_int (144 + channel) in
-    Event.create ~status ~data1:note ~data2:volume ~timestamp
+  let channel = 15 land channel in
+  let status = char_of_int (144 lor channel) in
+  Event.create ~status ~data1:note ~data2:volume ~timestamp
 
 let message_off ~note ~timestamp ~volume ~channel () =
-  if channel > 15 then raise (invalid_arg "Channel should be between 0 and 15")
-  else
-    let status = char_of_int (128 + channel) in
-    Event.create ~status ~data1:note ~data2:volume ~timestamp
+  let channel = 15 land channel in
+  let status = char_of_int (128 + channel) in
+  Event.create ~status ~data1:note ~data2:volume ~timestamp
 
 let bend_pitch ~bend ~timestamp ~channel =
+  let channel = 15 land channel in
   let status = char_of_int (224 + channel) in
-  if channel > 15 then raise (invalid_arg "Channel should be between 0 and 15")
-  else
-    let data1 = char_of_int (bend land 0b1111111) in
-    let data2 = char_of_int (bend lsr 7) in
-    Event.create ~status ~data1 ~data2 ~timestamp
+  let data1 = char_of_int (bend land 0b1111111) in
+  let data2 = char_of_int (bend lsr 7) in
+  Event.create ~status ~data1 ~data2 ~timestamp
 
 (* Best function ever!! <3 *)
 let handle_error = function Ok _ -> () | Error _ -> ()
