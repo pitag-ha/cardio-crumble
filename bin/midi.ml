@@ -46,12 +46,12 @@ let message_on ~note ~timestamp ~volume ~channel () =
 
 let message_off ~note ~timestamp ~volume ~channel () =
   let channel = 15 land channel in
-  let status = char_of_int (128 + channel) in
+  let status = char_of_int (128 lor channel) in
   Event.create ~status ~data1:note ~data2:volume ~timestamp
 
 let bend_pitch ~bend ~timestamp ~channel =
   let channel = 15 land channel in
-  let status = char_of_int (224 + channel) in
+  let status = char_of_int (224 lor channel) in
   let data1 = char_of_int (bend land 0b1111111) in
   let data2 = char_of_int (bend lsr 7) in
   Event.create ~status ~data1 ~data2 ~timestamp
