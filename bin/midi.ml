@@ -51,7 +51,7 @@ let bend_pitch ~bend ~timestamp =
   Event.create ~status:'\224' ~data1 ~data2 ~timestamp
 
 let control_change ~cc ~value ~timestamp =
-  if cc > 119 then raise (invalid_arg "Sorry, [cc] must be <= 119")
+  if cc > 119 then invalid_arg "Sorry, [cc] must be <= 119"
   else
     let data1 = char_of_int (cc land 0b1111111) in
     let data2 = char_of_int (value land 0b1111111) in
