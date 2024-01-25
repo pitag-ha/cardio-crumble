@@ -60,19 +60,12 @@ let get_increment num_beats event =
   Mutex.unlock quantifier_table_lock;
   incr
 
-let rec sequencer_main_func num_beats tones device bpm _ =
+let rec sequencer_main_func num_beats tones device bpm queue _ =
   let interesting_stuff =
     let compare e1 e2 =
       Int.neg (Event.compare ~f:(get_increment num_beats) e1 e2)
     in
     let sorted_events = List.sort compare Event.all in
-    List.iter
-      (fun e ->
-        Format.printf "%s: %f\n%!"
-          (Runtime_events.runtime_phase_name e)
-          (get_increment num_beats e))
-      sorted_events;
-    print_endline "-------------------";
 
     let rec loop acc = function
       | hd :: tl ->
@@ -97,12 +90,13 @@ let rec sequencer_main_func num_beats tones device bpm _ =
     (function
       | None -> ()
       | Some event ->
-          let { Midi.Scale.note; volume } = Play.event_to_note tones event in
-          Midi.(
+          let { Midi.Scale.note; _ } = Play.event_to_note tones event in
+          (* Midi.(
             write_output device
-              [ message_on ~note ~timestamp:0l ~volume ~channel:0 () ]);
+              [ message_on ~note ~timestamp:0l ~volume ~channel:0 () ]); *)
           (*FIXME: don't sleep, but use a timestamp*)
-          Unix.sleepf (60. /. Float.of_int bpm /. Float.of_int n))
+          (* Unix.sleepf (60. /. Float.of_int bpm /. Float.of_int n)) *)
+          Queue.push (note, 24/n) queue)
     interesting_stuff;
   Mutex.lock event_table_lock;
   Hashtbl.clear event_table;
@@ -111,15 +105,17 @@ let rec sequencer_main_func num_beats tones device bpm _ =
   if Atomic.get Watchdog.terminate then
     ()
   else
-    sequencer_main_func (num_beats + 1) tones device bpm ()
+    sequencer_main_func (num_beats + 1) tones device bpm queue ()
 
 let tracing (bpm : int) device child_alive path_pid tones =
+  let queue = Queue.create () in
   let polling_domain = Domain.spawn (polling_main_func path_pid) in
   let sequencer_domain =
-    Domain.spawn (sequencer_main_func 1 tones device bpm)
+    Domain.spawn (sequencer_main_func 1 tones device bpm queue)
   in
   let watchdog_domain = Domain.spawn (Watchdog.watchdog_func child_alive) in
-  List.iter Domain.join [ watchdog_domain; polling_domain; sequencer_domain ]
+  let clock_domain = Domain.spawn (Read_clock.clock_domain_main (Read_clock.External 5) device queue) in
+  List.iter Domain.join [ watchdog_domain; polling_domain; sequencer_domain; clock_domain ]
 
 let bpm = Arg.(value & opt int 120 & info [ "bpm"; "--bpm" ] ~docv:"BPM")
 let stat_play bpm = Play.play ~tracing:(tracing bpm)

@@ -5,7 +5,9 @@ val error_to_string : Portmidi.Portmidi_error.t -> string
 module Device : sig
   type t
 
-  val create : int -> t
+  val create_output : int -> t
+  val create_input : int -> Portmidi.Input_stream.t
+
   val shutdown : t -> (unit, Portmidi.Portmidi_error.t) result
 end
 

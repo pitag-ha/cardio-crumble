@@ -14,7 +14,7 @@ module Device = struct
   type t = { device_id : int; device : Portmidi.Output_stream.t }
 
   (* TODO: don't hardcode device_id. get it from the portmidi [get_device] *)
-  let create device_id =
+  let create_output device_id =
     match Portmidi.open_output ~device_id ~buffer_size:0l ~latency:1l with
     | Error _ ->
         Printf.eprintf "Can't find midi device with id: %i\nIs it connected?\n"
@@ -23,8 +23,16 @@ module Device = struct
         (* let err = Printf.sprintf "Can't find midi device with id %i.Is it connected?" device_id in failwith err *)
     | Ok device -> { device; device_id }
 
+  let create_input device_id =
+      match Portmidi.open_input ~device_id ~buffer_size:1024l  with
+      | Error _ ->
+          Printf.eprintf "Can't find midi device with id: %i\nIs it connected?\n"
+            device_id;
+          exit 1
+      | Ok device -> device
+  
   let turn_off_everything device_id =
-    let device = create device_id in
+    let device = create_output device_id in
     let* _ =
       Portmidi.write_output device.device
         [
@@ -32,6 +40,7 @@ module Device = struct
         ]
     in
     Portmidi.close_output device.device
+
 
   let shutdown { device; device_id } =
     let* _ = Portmidi.close_output device in

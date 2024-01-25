@@ -12,7 +12,7 @@ let play ~tracing device_id scale argv =
     | prog :: args -> (prog, Array.of_list args)
     | _ -> failwith "No program given"
   in
-  let device = Midi.Device.create device_id in
+  let device = Midi.Device.create_output device_id in
   let _ = handle_control_c () in
   (* Extract the user supplied program and arguments. *)
   let proc =
