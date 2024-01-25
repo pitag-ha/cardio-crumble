@@ -18,7 +18,8 @@ let process_event queue device (ev : Portmidi.Portmidi_event.t) =
         | None -> ());
       match Queue.take_opt queue with
       | None -> Atomic.set milestone (None, 96)
-      | Some (note, cycles) -> 
+      | Some (note, notes_per_beat) ->
+        let cycles = 24/notes_per_beat in 
         print_endline "milestone started: turn on note";
         Midi.(
           write_output device
@@ -45,7 +46,27 @@ let external_main input_device_id output_device note_queue =
   in
   aux ()
 
+let internal_main bpm device note_queue =
+  let rec aux () = 
+    if Atomic.get Watchdog.terminate then
+      ()
+    else begin
+      match Queue.take_opt note_queue with
+      | None -> Unix.sleepf (60. /. float_of_int bpm ); aux ()
+      | Some (note, n) ->
+        Midi.(
+          write_output device
+            [ message_on ~note ~timestamp:0l ~volume:'\090' ~channel:6 () ]);
+        Unix.sleepf (60. /. float_of_int bpm /. float_of_int n);
+        Midi.(
+          write_output device
+            [ message_off ~note ~timestamp:0l ~volume:'\090' ~channel:6 () ]);
+            aux ()
+    end
+  in
+  aux ()
+
 let clock_domain_main clock_source output_device note_queue () =
   match clock_source with
   | External input_device_id -> external_main input_device_id output_device note_queue
-  | Internal _bpm -> assert false
+  | Internal bpm -> internal_main bpm output_device note_queue

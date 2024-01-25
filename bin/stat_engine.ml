@@ -96,7 +96,7 @@ let rec sequencer_main_func num_beats tones device bpm queue _ =
               [ message_on ~note ~timestamp:0l ~volume ~channel:0 () ]); *)
           (*FIXME: don't sleep, but use a timestamp*)
           (* Unix.sleepf (60. /. Float.of_int bpm /. Float.of_int n)) *)
-          Queue.push (note, 24/n) queue)
+          Queue.push (note, n) queue)
     interesting_stuff;
   Mutex.lock event_table_lock;
   Hashtbl.clear event_table;
