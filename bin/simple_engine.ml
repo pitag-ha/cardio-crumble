@@ -17,33 +17,28 @@ let runtime_counter device tones _domain_id ts counter _value =
   | EV_C_MINOR_PROMOTED ->
       starting_time := Some ts;
       Midi.(
-        let { Scale.note; volume } = tones 0 in
-        write_output device
-          [ message_on ~note ~timestamp:0l ~volume ~channel:0 () ])
+        let note = tones 0 in
+        write_output device [ message_on ~note () ])
       (* Unix.sleep 5;
          Midi.(write_output [ message_off ~note:base_note () ]) *)
   | _ -> ()
 
 let runtime_begin device tones _domain_id ts event =
-  let { Midi.Scale.note; volume } = Play.event_to_note tones event in
+  let note = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(
-        write_output device
-          [ message_off ~note ~timestamp:ts ~volume ~channel:0 () ]);
+      Midi.(write_output device [ message_off ~note ~timestamp:ts () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
 
 let runtime_end device tones _domain_id ts event =
-  let { Midi.Scale.note; volume } = Play.event_to_note tones event in
+  let note = Play.event_to_note tones event in
   match adjust_time ts with
   | None -> ()
   | Some ts ->
-      Midi.(
-        write_output device
-          [ message_off ~note ~timestamp:ts ~volume ~channel:0 () ]);
+      Midi.(write_output device [ message_off ~note ~timestamp:ts () ]);
       Printf.printf "%f: start of %s. ts: %ld\n%!" (Sys.time ())
         (Runtime_events.runtime_phase_name event)
         ts
@@ -54,7 +49,7 @@ let tracing device child_alive path_pid tones =
   let runtime_end = runtime_end device tones in
   let runtime_counter = runtime_counter device tones in
   let cbs = Callbacks.create ~runtime_begin ~runtime_end ~runtime_counter () in
-  let watchdog_domain = Domain.spawn (Watchdog.watchdog_func child_alive)  in
+  let watchdog_domain = Domain.spawn (Watchdog.watchdog_func child_alive) in
   while not (Atomic.get Watchdog.terminate) do
     ignore (read_poll c cbs None);
     Unix.sleepf 0.1
@@ -62,5 +57,9 @@ let tracing device child_alive path_pid tones =
   Domain.join watchdog_domain
 
 let simple_play = Play.play ~tracing
-let play_t = Term.(const simple_play $ Play.device_id $ Play.scale $ Play.argv)
+
+let play_t =
+  Term.(
+    const simple_play $ Play.midi_out $ Play.channel $ Play.scale $ Play.argv)
+
 let cmd = Cmd.v (Cmd.info "simple_engine") play_t

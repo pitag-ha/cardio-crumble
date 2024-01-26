@@ -6,13 +6,14 @@ let handle_control_c () =
   in
   Sys.(signal sigint handle)
 
-let play ~tracing device_id scale argv =
+let play ~tracing midi_out channel scale argv =
+  Midi.channel := channel - 1;
   let prog, args =
     match argv with
     | prog :: args -> (prog, Array.of_list args)
     | _ -> failwith "No program given"
   in
-  let device = Midi.Device.create device_id in
+  let device = Midi.Device.create_output midi_out in
   let _ = handle_control_c () in
   (* Extract the user supplied program and arguments. *)
   let proc =
@@ -36,8 +37,10 @@ open Cmdliner
 
 let argv = Arg.(non_empty & pos_all string [] & info [] ~docv:"ARGV")
 
-let device_id =
-  Arg.(value & opt int 0 & info [ "d"; "device_id" ] ~docv:"DEVICE_ID")
+let midi_out =
+  Arg.(value & opt int 0 & info [ "o"; "midi-out" ] ~docv:"DEVICE_ID")
+
+let channel = Arg.(value & opt int 1 & info [ "c"; "channel" ] ~docv:"CHANNEL")
 
 let scale_enum =
   Arg.enum

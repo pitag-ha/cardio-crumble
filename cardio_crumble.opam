@@ -14,6 +14,7 @@ depends: [
   "dune" {>= "3.3"}
   "portmidi" {>= "0.1"}
   "cmdliner" {>= "1.1.1"}
+  "saturn" 
   "odoc" {with-doc}
 ]
 build: [

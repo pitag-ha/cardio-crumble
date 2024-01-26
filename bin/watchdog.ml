@@ -13,4 +13,4 @@ let rec watchdog_func child_alive () =
   | true -> ()
   | false ->
       if not (child_alive ()) then Atomic.set terminate true
-      else watchdog_func child_alive () 
+      else watchdog_func child_alive ()

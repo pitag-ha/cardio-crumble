@@ -22,7 +22,7 @@ let runtime_begin _domain_id _ts event =
   add_to_hashtbl event_table event_table_lock event;
   add_to_hashtbl quantifier_table quantifier_table_lock event
 
-let polling_main_func path_pid _ =
+let polling_func path_pid _ =
   let c = create_cursor path_pid in
   let cbs = Callbacks.create ~runtime_begin () in
   while not (Atomic.get Watchdog.terminate) do
@@ -60,19 +60,12 @@ let get_increment num_beats event =
   Mutex.unlock quantifier_table_lock;
   incr
 
-let rec sequencer_main_func num_beats tones device bpm _ =
+let rec sequencer_func num_beats tones device bpm queue _ =
   let interesting_stuff =
     let compare e1 e2 =
       Int.neg (Event.compare ~f:(get_increment num_beats) e1 e2)
     in
     let sorted_events = List.sort compare Event.all in
-    List.iter
-      (fun e ->
-        Format.printf "%s: %f\n%!"
-          (Runtime_events.runtime_phase_name e)
-          (get_increment num_beats e))
-      sorted_events;
-    print_endline "-------------------";
 
     let rec loop acc = function
       | hd :: tl ->
@@ -97,34 +90,58 @@ let rec sequencer_main_func num_beats tones device bpm _ =
     (function
       | None -> ()
       | Some event ->
-          let { Midi.Scale.note; volume } = Play.event_to_note tones event in
-          Midi.(
-            write_output device
-              [ message_on ~note ~timestamp:0l ~volume ~channel:0 () ]);
-          (*FIXME: don't sleep, but use a timestamp*)
-          Unix.sleepf (60. /. Float.of_int bpm /. Float.of_int n))
+          let note = Play.event_to_note tones event in
+          Saturn.Queue.push queue (note, n))
     interesting_stuff;
   Mutex.lock event_table_lock;
   Hashtbl.clear event_table;
   Mutex.unlock event_table_lock;
   (* Unix.sleepf (60. /. Float.of_int bpm); *)
-  if Atomic.get Watchdog.terminate then
-    ()
-  else
-    sequencer_main_func (num_beats + 1) tones device bpm ()
+  if Atomic.get Watchdog.terminate then ()
+  else sequencer_func (num_beats + 1) tones device bpm queue ()
 
-let tracing (bpm : int) device child_alive path_pid tones =
-  let polling_domain = Domain.spawn (polling_main_func path_pid) in
+let tracing midi_in bpm device child_alive path_pid tones =
+  let queue = Saturn.Queue.create () in
+  let clock_source =
+    match (midi_in, bpm) with
+    | None, None ->
+        print_endline
+          "No bpm or clock source given, using internal clock at 120 BPM";
+        Clock.Internal 120
+    | None, Some bpm -> Internal bpm
+    | Some input_device_id, bpm ->
+        if Option.is_some bpm then
+          print_endline
+            "Ignoring the bpm argument since an external clock source was \
+             provided.";
+        Clock.External input_device_id
+  in
+  let polling_domain = Domain.spawn (polling_func path_pid) in
   let sequencer_domain =
-    Domain.spawn (sequencer_main_func 1 tones device bpm)
+    Domain.spawn (sequencer_func 1 tones device bpm queue)
   in
   let watchdog_domain = Domain.spawn (Watchdog.watchdog_func child_alive) in
-  List.iter Domain.join [ watchdog_domain; polling_domain; sequencer_domain ]
+  let clock_domain =
+    Domain.spawn (Clock.clock_func clock_source device queue)
+  in
+  List.iter Domain.join
+    [ watchdog_domain; polling_domain; sequencer_domain; clock_domain ]
 
-let bpm = Arg.(value & opt int 120 & info [ "bpm"; "--bpm" ] ~docv:"BPM")
-let stat_play bpm = Play.play ~tracing:(tracing bpm)
+let bpm =
+  Arg.(value & opt (some int) None & info [ "bpm"; "--bpm" ] ~docv:"BPM")
+
+let midi_in =
+  Arg.(
+    value
+    & opt (some int) None
+    & info [ "i"; "midi-in" ] ~docv:"EXTERNAL_CLOCK_ID")
+
+let stat_play bpm external_clock_id =
+  Play.play ~tracing:(tracing bpm external_clock_id)
 
 let play_t =
-  Term.(const stat_play $ bpm $ Play.device_id $ Play.scale $ Play.argv)
+  Term.(
+    const stat_play $ midi_in $ bpm $ Play.midi_out $ Play.channel $ Play.scale
+    $ Play.argv)
 
 let cmd = Cmd.v (Cmd.info "stat_engine") play_t
