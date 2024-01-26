@@ -1,4 +1,4 @@
 (executable
  (public_name cardio_crumble)
  (name main)
- (libraries runtime_events unix sexplib0 portmidi cmdliner saturn))
+ (libraries runtime_events unix sexplib0 portmidi cmdliner))

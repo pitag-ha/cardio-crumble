@@ -26,8 +26,9 @@ let polling_func path_pid _ =
   let c = create_cursor path_pid in
   let cbs = Callbacks.create ~runtime_begin () in
   while not (Atomic.get Watchdog.terminate) do
-    ignore (read_poll c cbs None);
-    Unix.sleepf 0.1
+    ignore (read_poll c cbs None)
+    (* FIXME: Probably we want to sleep at least a bit *)
+    (* Unix.sleepf 0.01 *)
   done
 
 let threshold = function
@@ -60,48 +61,54 @@ let get_increment num_beats event =
   Mutex.unlock quantifier_table_lock;
   incr
 
-let rec sequencer_func num_beats tones device bpm queue _ =
-  let interesting_stuff =
-    let compare e1 e2 =
-      Int.neg (Event.compare ~f:(get_increment num_beats) e1 e2)
-    in
-    let sorted_events = List.sort compare Event.all in
+let sequencer_func num_beats tones _device _bpm queue _ =
+  (* FIXME *)
+  Mutex.lock queue.Clock.CQueue.mutex;
+  let rec aux num_beats =
+    let interesting_stuff =
+      let compare e1 e2 =
+        Int.neg (Event.compare ~f:(get_increment num_beats) e1 e2)
+      in
+      let sorted_events = List.sort compare Event.all in
 
-    let rec loop acc = function
-      | hd :: tl ->
-          let i = List.length acc in
-          if i = 6 then acc
-          else
-            let new_acc =
-              if get_increment num_beats hd > threshold i then Some hd :: acc
-              else None :: acc
-            in
-            loop new_acc tl
-      | [] -> acc
+      let rec loop acc = function
+        | hd :: tl ->
+            let i = List.length acc in
+            if i = 6 then acc
+            else
+              let new_acc =
+                if get_increment num_beats hd > threshold i then Some hd :: acc
+                else None :: acc
+              in
+              loop new_acc tl
+        | [] -> acc
+      in
+      loop [] sorted_events
     in
-    loop [] sorted_events
+    let n =
+      List.fold_left
+        (fun acc -> function Some _ -> acc + 1 | None -> acc)
+        0 interesting_stuff
+    in
+    List.iter
+      (function
+        | None -> ()
+        | Some event ->
+            let note = Play.event_to_note tones event in
+            (* Debug: Adjust threashold: Currently, it's almost always pushing 6 nots or no notes. *)
+            (* Printf.printf "Pushing a note with rythm %n to the queue\n%!" n; *)
+            Queue.push (note, n) queue.Clock.CQueue.queue)
+      interesting_stuff;
+    Mutex.lock event_table_lock;
+    Hashtbl.clear event_table;
+    Mutex.unlock event_table_lock;
+    Condition.wait queue.Clock.CQueue.cond queue.mutex;
+    if Atomic.get Watchdog.terminate then () else aux (num_beats + 1)
   in
-  let n =
-    List.fold_left
-      (fun acc -> function Some _ -> acc + 1 | None -> acc)
-      0 interesting_stuff
-  in
-  List.iter
-    (function
-      | None -> ()
-      | Some event ->
-          let note = Play.event_to_note tones event in
-          Saturn.Queue.push queue (note, n))
-    interesting_stuff;
-  Mutex.lock event_table_lock;
-  Hashtbl.clear event_table;
-  Mutex.unlock event_table_lock;
-  (* Unix.sleepf (60. /. Float.of_int bpm); *)
-  if Atomic.get Watchdog.terminate then ()
-  else sequencer_func (num_beats + 1) tones device bpm queue ()
+  aux num_beats
 
 let tracing midi_in bpm device child_alive path_pid tones =
-  let queue = Saturn.Queue.create () in
+  let queue = Clock.CQueue.create () in
   let clock_source =
     match (midi_in, bpm) with
     | None, None ->
