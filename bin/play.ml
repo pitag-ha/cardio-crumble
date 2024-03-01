@@ -8,22 +8,35 @@ let handle_control_c () =
 
 let play ~tracing midi_out channel scale argv =
   Midi.channel := channel - 1;
-  let prog, args =
+  let dir, pid =
     match argv with
-    | prog :: args -> (prog, Array.of_list args)
-    | _ -> failwith "No program given"
+    | first_arg :: args ->
+        let dir, file =
+          My_fpath.(split_base @@ handle_result @@ of_string first_arg)
+        in
+        if String.equal (My_fpath.get_ext file) ".event" then
+          let pid = int_of_string @@ My_fpath.(to_string @@ rem_ext file) in
+          (My_fpath.to_string dir, pid)
+        else
+          let args = Array.of_list args in
+          let pid =
+            Unix.create_process_env first_arg args
+              [| "OCAML_RUNTIME_EVENTS_START=1" |]
+              Unix.stdin Unix.stdout Unix.stderr
+          in
+          (".", pid)
+    | _ ->
+        failwith
+          "cardio-crumble expects a positional argument. It can be either the \
+           path to the executable you want cardio-crumble to run or the path \
+           to the event ring of a running process. In the latter case, the \
+           process has to be spawned with OCAML_RUNTIME_EVENTS_START=1 :)"
   in
   let device = Midi.Device.create_output midi_out in
   let _ = handle_control_c () in
-  (* Extract the user supplied program and arguments. *)
-  let proc =
-    Unix.create_process_env prog args
-      [| "OCAML_RUNTIME_EVENTS_START=1" |]
-      Unix.stdin Unix.stdout Unix.stderr
-  in
   Unix.sleepf 0.1;
-  tracing device (Util.child_alive proc)
-    (Some (".", proc))
+  tracing device (Util.child_alive pid)
+    (Some (dir, pid))
     (Midi.Scale.get ~base_note:48 scale);
   print_endline "got to the end";
   match Midi.Device.shutdown device with
