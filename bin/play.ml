@@ -14,7 +14,7 @@ let play ~tracing midi_out channel scale argv =
         let dir, file =
           My_fpath.(split_base @@ handle_result @@ of_string first_arg)
         in
-        if String.equal (My_fpath.get_ext file) ".event" then
+        if String.equal (My_fpath.get_ext file) ".events" then
           let pid = int_of_string @@ My_fpath.(to_string @@ rem_ext file) in
           (My_fpath.to_string dir, pid, fun () -> true)
         else
