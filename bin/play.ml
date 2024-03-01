@@ -8,7 +8,7 @@ let handle_control_c () =
 
 let play ~tracing midi_out channel scale argv =
   Midi.channel := channel - 1;
-  let dir, pid =
+  let dir, pid, child_alive =
     match argv with
     | first_arg :: args ->
         let dir, file =
@@ -16,7 +16,7 @@ let play ~tracing midi_out channel scale argv =
         in
         if String.equal (My_fpath.get_ext file) ".event" then
           let pid = int_of_string @@ My_fpath.(to_string @@ rem_ext file) in
-          (My_fpath.to_string dir, pid)
+          (My_fpath.to_string dir, pid, fun () -> true)
         else
           let args = Array.of_list args in
           let pid =
@@ -24,7 +24,7 @@ let play ~tracing midi_out channel scale argv =
               [| "OCAML_RUNTIME_EVENTS_START=1" |]
               Unix.stdin Unix.stdout Unix.stderr
           in
-          (".", pid)
+          (".", pid, Util.child_alive pid)
     | _ ->
         failwith
           "cardio-crumble expects a positional argument. It can be either the \
@@ -35,7 +35,7 @@ let play ~tracing midi_out channel scale argv =
   let device = Midi.Device.create_output midi_out in
   let _ = handle_control_c () in
   Unix.sleepf 0.1;
-  tracing device (Util.child_alive pid)
+  tracing device child_alive
     (Some (dir, pid))
     (Midi.Scale.get ~base_note:48 scale);
   print_endline "got to the end";
